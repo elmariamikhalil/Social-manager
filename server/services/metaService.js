@@ -9,6 +9,7 @@ function getMetaAuthUrl(state = 'default') {
     'pages_manage_posts',
     'pages_read_engagement',
     'pages_show_list',
+    'business_management',
     'instagram_basic',
     'instagram_content_publish',
     'instagram_manage_insights',
@@ -21,6 +22,7 @@ function getMetaAuthUrl(state = 'default') {
     redirect_uri: process.env.META_REDIRECT_URI || '',
     scope: scopes,
     response_type: 'code',
+    auth_type: 'rerequest',
     state,
   });
 
