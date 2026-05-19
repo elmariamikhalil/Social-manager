@@ -1,0 +1,20 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Never commit real env files
+.env
+server/.env
+
+# SQLite database (lives on the server only)
+*.db
+*.db-shm
+*.db-wal
+
+# Build output (built on the server)
+client/dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

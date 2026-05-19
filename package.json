@@ -1,0 +1,20 @@
+{
+  "name": "social-manager",
+  "version": "1.0.0",
+  "description": "AI-Powered Content Creator & Marketing Manager",
+  "scripts": {
+    "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"cyan,magenta\" \"npm run server\" \"npm run client\"",
+    "server": "cd server && node index.js",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm install && npm run build",
+    "start": "cd server && node index.js",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "azure:deploy": "npm run build && echo Build complete — deploy via Azure CLI or ZIP"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
