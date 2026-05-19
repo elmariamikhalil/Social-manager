@@ -2,8 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'socialai-manager',
-      script: './server/index.js',
-      cwd: '/home/admin-01/Social-manager',
+      script: 'index.js',
+      cwd: '/home/admin-01/Social-manager/server',
+      exec_mode: 'fork',
       instances: 1,
       autorestart: true,
       watch: false,
