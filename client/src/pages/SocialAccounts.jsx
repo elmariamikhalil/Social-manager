@@ -1,6 +1,98 @@
 import { useState, useEffect } from 'react';
 import { API } from '../App';
 
+const PLATFORM_CONFIG = {
+  instagram: { icon: '📸', color: '#e1306c', gradient: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', label: 'Instagram' },
+  facebook:  { icon: '📘', color: '#1877f2', gradient: 'linear-gradient(135deg, #1877f2, #0d5db5)', label: 'Facebook' },
+  twitter:   { icon: '🐦', color: '#1da1f2', gradient: 'linear-gradient(135deg, #1da1f2, #0d8bd9)', label: 'Twitter/X' },
+  linkedin:  { icon: '💼', color: '#0077b5', gradient: 'linear-gradient(135deg, #0077b5, #005e8a)', label: 'LinkedIn' },
+  tiktok:    { icon: '🎵', color: '#010101', gradient: 'linear-gradient(135deg, #010101, #ff0050, #00f2ea)', label: 'TikTok' },
+};
+
+function getInitials(name = '') {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function AccountProfileCard({ account, onDisconnect, onToggle }) {
+  const cfg = PLATFORM_CONFIG[account.platform] || { icon: '📱', color: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#a855f7)', label: account.platform };
+  const isDemo = account.account_id?.startsWith('demo_');
+
+  return (
+    <div className="profile-card">
+      {/* Cover band */}
+      <div className="profile-card-cover" style={{ background: cfg.gradient }} />
+
+      {/* Avatar */}
+      <div className="profile-card-avatar-wrap">
+        {account.profile_picture ? (
+          <img src={account.profile_picture} alt={account.account_name} className="profile-card-avatar" />
+        ) : (
+          <div className="profile-card-avatar profile-card-avatar--initials" style={{ background: cfg.gradient }}>
+            {getInitials(account.account_name)}
+          </div>
+        )}
+        <div className="profile-card-platform-badge" style={{ background: cfg.gradient }}>
+          {cfg.icon}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="profile-card-body">
+        <div className="profile-card-name">{account.account_name}</div>
+        <div className="profile-card-handle">
+          @{account.account_username || account.account_name?.toLowerCase().replace(/\s+/g, '_')}
+        </div>
+
+        {/* Stats row */}
+        <div className="profile-card-stats">
+          <div className="profile-stat">
+            <div className="profile-stat-value">{account.followers_count ? account.followers_count.toLocaleString() : '—'}</div>
+            <div className="profile-stat-label">Followers</div>
+          </div>
+          <div className="profile-stat-divider" />
+          <div className="profile-stat">
+            <div className="profile-stat-value">{account.posts_count || '—'}</div>
+            <div className="profile-stat-label">Posts</div>
+          </div>
+          <div className="profile-stat-divider" />
+          <div className="profile-stat">
+            <div className="profile-stat-value">{cfg.label}</div>
+            <div className="profile-stat-label">Platform</div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="profile-card-tags">
+          {isDemo && <span className="badge badge-demo">Demo</span>}
+          {account.page_name && (
+            <span className="badge badge-draft" style={{ gap: 4 }}>📄 {account.page_name}</span>
+          )}
+        </div>
+
+        {/* Connected at */}
+        <div className="profile-card-meta">
+          Connected {new Date(account.connected_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </div>
+      </div>
+
+      {/* Footer actions */}
+      <div className="profile-card-footer">
+        <button
+          className={`profile-toggle-btn ${account.is_active ? 'active' : ''}`}
+          onClick={() => onToggle(account.id)}
+          title="Toggle active status"
+        >
+          <span className="profile-toggle-dot" />
+          {account.is_active ? 'Active' : 'Inactive'}
+        </button>
+        <button className="btn btn-danger btn-sm" onClick={() => onDisconnect(account.id)}>
+          Disconnect
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SocialAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [metaConfigured, setMetaConfigured] = useState(false);
@@ -18,8 +110,19 @@ export default function SocialAccounts() {
   const load = () => {
     fetch(`${API}/api/accounts`)
       .then(r => r.json())
-      .then(d => {
-        setAccounts(d.accounts || []);
+      .then(async d => {
+        const accs = d.accounts || [];
+        // Attach latest growth snapshot data to each account
+        const enriched = await Promise.all(accs.map(async acc => {
+          try {
+            const snap = await fetch(`${API}/api/analytics/growth?days=1`).then(r => r.json());
+            const latest = (snap.snapshots || []).find(s => s.account_id === acc.id);
+            return { ...acc, followers_count: latest?.followers_count || 0, posts_count: latest?.posts_count || 0 };
+          } catch {
+            return acc;
+          }
+        }));
+        setAccounts(enriched);
         setMetaConfigured(d.meta_configured || false);
       });
   };
@@ -65,9 +168,9 @@ export default function SocialAccounts() {
       const res = await fetch(`${API}/api/accounts/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Failed to disconnect account');
+        throw new Error(errData.error || 'Failed to disconnect');
       }
-      showToast('✅ Account disconnected successfully!');
+      showToast('✅ Account disconnected!');
       load();
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
@@ -77,43 +180,60 @@ export default function SocialAccounts() {
   const toggleActive = async (id) => {
     try {
       const res = await fetch(`${API}/api/accounts/${id}/toggle`, { method: 'PUT' });
-      if (!res.ok) throw new Error('Failed to toggle account status');
-      showToast('⚡ Account active status updated!');
+      if (!res.ok) throw new Error('Failed to toggle');
+      showToast('⚡ Status updated!');
       load();
     } catch (err) {
       showToast(`❌ ${err.message}`, 'error');
     }
   };
 
-  const PLATFORM_ICONS = { instagram: '📸', facebook: '📘', twitter: '🐦', linkedin: '💼', tiktok: '🎵' };
-  const PLATFORM_COLORS = { instagram: 'var(--accent-pink)', facebook: '#60a5fa', twitter: 'var(--accent-cyan)', linkedin: '#60a5fa', tiktok: 'var(--text-primary)' };
+  const PLATFORMS = ['instagram', 'facebook', 'twitter', 'linkedin', 'tiktok'];
 
   return (
     <div>
+      {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">🔗 Social Accounts</h1>
-          <p className="page-subtitle">Connect and manage your social media accounts</p>
+          <h1 className="page-title">Social Accounts</h1>
+          <p className="page-subtitle">Manage your connected social media pages and profiles</p>
         </div>
         <div className="page-actions">
-          <button className="btn btn-secondary" onClick={() => setShowDemoForm(!showDemoForm)}>+ Add Demo Account</button>
-          <button className="btn btn-primary" onClick={connectMeta}>🔌 Connect Meta (IG + FB)</button>
+          <button className="btn btn-secondary" onClick={() => setShowDemoForm(!showDemoForm)}>
+            + Demo Account
+          </button>
+          <button className="btn btn-primary" onClick={connectMeta}>
+            🔌 Connect Meta
+          </button>
         </div>
       </div>
 
-      {/* Meta Setup Guide */}
+      {/* Platform Status Bar */}
+      <div className="platform-status-bar">
+        {PLATFORMS.map(p => {
+          const cfg = PLATFORM_CONFIG[p];
+          const connected = accounts.filter(a => a.platform === p);
+          return (
+            <div key={p} className={`platform-status-chip ${connected.length > 0 ? 'connected' : ''}`}>
+              <span className="platform-status-icon">{cfg.icon}</span>
+              <div>
+                <div className="platform-status-name">{cfg.label}</div>
+                <div className="platform-status-count">
+                  {connected.length > 0 ? `${connected.length} page${connected.length > 1 ? 's' : ''}` : 'Not connected'}
+                </div>
+              </div>
+              <span className={`platform-status-dot ${connected.length > 0 ? 'on' : ''}`} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Meta Setup Warning */}
       {!metaConfigured && (
         <div className="alert alert-warning" style={{ marginBottom: 24 }}>
           <span>⚠️</span>
           <div>
-            <strong>Meta API not configured.</strong> To connect real Instagram & Facebook accounts:
-            <ol style={{ marginTop: 8, paddingLeft: 20, fontSize: '0.875rem', lineHeight: 2 }}>
-              <li>Go to <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> and create an app</li>
-              <li>Add <strong>META_APP_ID</strong> and <strong>META_APP_SECRET</strong> to <code>server/.env</code></li>
-              <li>Set redirect URI to <code>http://localhost:3001/api/accounts/meta/callback</code></li>
-              <li>Restart the server and click "Connect Meta" above</li>
-            </ol>
-            <strong>For now, use demo accounts below to test the full workflow.</strong>
+            <strong>Meta API not configured.</strong> Add <code>META_APP_ID</code> and <code>META_APP_SECRET</code> to <code>server/.env</code>, then click Connect Meta.
           </div>
         </div>
       )}
@@ -121,26 +241,26 @@ export default function SocialAccounts() {
       {/* Demo Account Form */}
       {showDemoForm && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-title" style={{ marginBottom: 16 }}>Add Demo Account</div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            <div className="form-group" style={{ flex: 1, margin: 0 }}>
-              <label className="form-label">Account Name / Brand</label>
+          <div className="card-header">
+            <div className="card-title">Add Demo Account</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowDemoForm(false)}>✕</button>
+          </div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: 1, minWidth: 180, margin: 0 }}>
+              <label className="form-label">Account Name / Page</label>
               <input className="form-input" placeholder="e.g. My Lifestyle Brand" value={demoName} onChange={e => setDemoName(e.target.value)} />
             </div>
-            <div className="form-group" style={{ width: 180, margin: 0 }}>
+            <div className="form-group" style={{ width: 190, margin: 0 }}>
               <label className="form-label">Platform</label>
               <select className="form-select" value={demoPlatform} onChange={e => setDemoPlatform(e.target.value)}>
-                <option value="instagram">📸 Instagram</option>
-                <option value="facebook">📘 Facebook</option>
-                <option value="twitter">🐦 Twitter/X</option>
-                <option value="linkedin">💼 LinkedIn</option>
-                <option value="tiktok">🎵 TikTok</option>
+                {Object.entries(PLATFORM_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.icon} {v.label}</option>
+                ))}
               </select>
             </div>
-            <button className="btn btn-primary" onClick={addDemo} disabled={adding} style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-              {adding ? 'Adding...' : '+ Add Account'}
+            <button className="btn btn-primary" onClick={addDemo} disabled={adding}>
+              {adding ? 'Adding...' : '+ Add'}
             </button>
-            <button className="btn btn-ghost" onClick={() => setShowDemoForm(false)}>Cancel</button>
           </div>
         </div>
       )}
@@ -151,126 +271,33 @@ export default function SocialAccounts() {
           <div className="empty-state">
             <div className="empty-icon">🔌</div>
             <h3>No accounts connected</h3>
-            <p>Connect your Instagram & Facebook accounts or add a demo account to get started</p>
-            <button className="btn btn-primary" onClick={() => setShowDemoForm(true)}>+ Add Demo Account</button>
+            <p>Connect your Meta account (Instagram + Facebook Pages) or add a demo account to test the workflow</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={connectMeta}>🔌 Connect Meta</button>
+              <button className="btn btn-secondary" onClick={() => setShowDemoForm(true)}>+ Demo Account</button>
+            </div>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="profile-grid">
           {accounts.map(account => (
-            <AccountCard
+            <AccountProfileCard
               key={account.id}
               account={account}
               onDisconnect={disconnect}
               onToggle={toggleActive}
-              platformIcon={PLATFORM_ICONS[account.platform] || '📱'}
-              platformColor={PLATFORM_COLORS[account.platform] || 'var(--text-primary)'}
             />
           ))}
         </div>
       )}
 
-      {/* Platforms Status */}
-      <div className="card" style={{ marginTop: 32 }}>
-        <div className="card-title" style={{ marginBottom: 20 }}>📡 Platform Connection Status</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-          {[
-            { platform: 'instagram', label: 'Instagram', icon: '📸', note: 'Via Meta Graph API' },
-            { platform: 'facebook', label: 'Facebook', icon: '📘', note: 'Via Meta Graph API' },
-            { platform: 'twitter', label: 'Twitter/X', icon: '🐦', note: 'Coming soon' },
-            { platform: 'linkedin', label: 'LinkedIn', icon: '💼', note: 'Coming soon' },
-            { platform: 'tiktok', label: 'TikTok', icon: '🎵', note: 'Coming soon' },
-          ].map(p => {
-            const connected = accounts.some(a => a.platform === p.platform);
-            return (
-              <div key={p.platform} style={{
-                padding: '16px',
-                background: connected ? 'rgba(16, 185, 129, 0.05)' : 'var(--bg-input)',
-                border: `1px solid ${connected ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-md)',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: 8 }}>{p.icon}</div>
-                <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: 4 }}>{p.label}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 8 }}>{p.note}</div>
-                <span className={`badge ${connected ? 'badge-published' : 'badge-draft'}`}>
-                  {connected ? '✅ Connected' : '○ Not connected'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {toast && (
         <div className="toast-container">
-          <div className={`toast ${toast.type === 'error' ? 'alert-error' : 'alert-success'}`} style={{ border: 'none' }}>
+          <div className={`toast ${toast.type === 'error' ? 'alert-error' : 'alert-success'}`}>
             {toast.msg}
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function AccountCard({ account, onDisconnect, onToggle, platformIcon, platformColor }) {
-  return (
-    <div className="card glow-hover" style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${platformColor}22, ${platformColor}44)`,
-          border: `2px solid ${platformColor}44`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.5rem', flexShrink: 0,
-        }}>
-          {platformIcon}
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-            {account.account_name}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            @{account.account_username || account.account_name?.toLowerCase().replace(/\s+/g, '_')}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <span className={`badge badge-${account.platform}`}>{platformIcon} {account.platform}</span>
-        {account.account_id?.startsWith('demo_') && <span className="badge badge-demo">Demo</span>}
-        <button
-          className={`badge ${account.is_active ? 'badge-published' : 'badge-draft'}`}
-          onClick={() => onToggle(account.id)}
-          style={{
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            transition: 'all 0.2s ease',
-          }}
-          title="Click to toggle active status"
-        >
-          {account.is_active ? '🟢 Active' : '⚪ Inactive'}
-        </button>
-      </div>
-
-      {account.page_name && (
-        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-          📄 Page: {account.page_name}
-        </div>
-      )}
-
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-        Connected {new Date(account.connected_at).toLocaleDateString()}
-      </div>
-
-      <button className="btn btn-danger btn-sm" onClick={() => onDisconnect(account.id)} style={{ width: '100%', justifyContent: 'center' }}>
-        Disconnect
-      </button>
     </div>
   );
 }

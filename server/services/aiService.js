@@ -268,11 +268,56 @@ async function generateImage(promptText) {
   return null;
 }
 
+async function extractContentIdeasFromPlan(plan, brand) {
+  const platforms = (() => { try { return JSON.parse(plan.platforms || '[]'); } catch { return ['instagram', 'facebook']; } })();
+
+  const prompt = `You are a social media content strategist. Based on the marketing plan below, extract exactly 10 specific, ready-to-post content ideas.
+
+Marketing Plan:
+"""
+${plan.strategy?.substring(0, 3000)}
+"""
+
+Brand: ${brand.name}
+Niche: ${brand.niche}
+Tone: ${brand.tone}
+Target Platforms: ${platforms.join(', ')}
+
+Return ONLY a JSON array (no markdown, no explanation) with exactly 10 objects like this:
+[
+  {
+    "platform": "instagram",
+    "topic": "Short description of post topic",
+    "body": "The full ready-to-post caption text with emojis and hashtags as appropriate",
+    "hashtags": ["#hashtag1", "#hashtag2"]
+  }
+]
+
+Distribute posts across platforms: ${platforms.join(', ')}. Make each post unique, specific, and immediately usable.`;
+
+  const result = await generateContent(prompt);
+
+  try {
+    // Strip markdown code fences if present
+    const cleaned = result.text.replace(/```json\n?|\n?```/g, '').trim();
+    const ideas = JSON.parse(cleaned);
+    return Array.isArray(ideas) ? ideas : [];
+  } catch (e) {
+    console.error('Failed to parse content ideas JSON:', e.message);
+    // Fallback: generate simple ideas
+    return platforms.flatMap(p => [
+      { platform: p, topic: 'Brand awareness post', body: `Exciting things are happening at ${brand.name}! Stay tuned for updates. 🚀 #${brand.niche.replace(/\s+/g, '')}`, hashtags: [] },
+      { platform: p, topic: 'Engagement post', body: `What's your biggest challenge with ${brand.niche}? Drop your answer below! 👇 #Community #${brand.niche.replace(/\s+/g, '')}`, hashtags: [] },
+    ]).slice(0, 10);
+  }
+}
+
 module.exports = {
   generateContent,
   generateSocialPost,
   generateImagePrompt,
   generateMarketingPlan,
   scoreContentIdea,
-  generateImage
+  generateImage,
+  extractContentIdeasFromPlan,
 };

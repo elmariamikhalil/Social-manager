@@ -1182,3 +1182,764 @@ tbody tr:hover {
     width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE CARDS — Social Accounts page
+   ═══════════════════════════════════════════════════════════════ */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.profile-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.profile-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.profile-card-cover {
+  height: 80px;
+  width: 100%;
+  opacity: 0.85;
+}
+
+.profile-card-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 36px;
+  margin: 0 auto;
+}
+
+.profile-card-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-base);
+  object-fit: cover;
+  position: absolute;
+  top: -36px;
+  left: 0;
+}
+
+.profile-card-avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.profile-card-platform-badge {
+  position: absolute;
+  top: -12px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  border: 2px solid var(--bg-base);
+  z-index: 1;
+}
+
+.profile-card-body {
+  padding: 14px 20px 16px;
+  text-align: center;
+}
+
+.profile-card-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+
+.profile-card-handle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.profile-card-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.profile-stat {
+  flex: 1;
+  text-align: center;
+  padding: 0 8px;
+}
+
+.profile-stat-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.profile-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.profile-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.profile-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.profile-card-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.profile-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.01);
+  gap: 10px;
+}
+
+.profile-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.profile-toggle-btn.active {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: var(--green);
+}
+
+.profile-toggle-btn:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+.profile-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.profile-toggle-btn.active .profile-toggle-dot {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+/* ── Platform Status Bar ─────────────────────────────────────── */
+
+.platform-status-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.platform-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  flex: 1;
+  min-width: 150px;
+  transition: all 0.2s ease;
+}
+
+.platform-status-chip.connected {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.platform-status-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.platform-status-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.platform-status-count {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.platform-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.platform-status-dot.on {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MARKETING PLANS — Structured view & Launch
+   ═══════════════════════════════════════════════════════════════ */
+
+.plans-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.plans-list-header {
+  padding: 0 4px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+/* Plan Card */
+.plan-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.plan-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.plan-card.selected {
+  border-color: var(--primary-light);
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+}
+
+.plan-card.launched {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.plan-card-accent {
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--pink));
+}
+
+.plan-card.launched .plan-card-accent {
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+}
+
+.plan-card-content {
+  padding: 16px 18px;
+}
+
+.plan-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.plan-card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.plan-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.plan-period-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-light);
+  background: var(--primary-glow);
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--primary-border);
+}
+
+.plan-card-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.plan-card-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.plan-card-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Plan Detail */
+.plan-detail {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+
+.plan-detail-header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.plan-detail-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.plan-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.plan-detail-platforms {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Launch CTA */
+.plan-launch-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.06));
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+  flex-wrap: wrap;
+}
+
+.plan-launch-cta-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.plan-launch-cta-sub {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.btn-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border-radius: var(--r-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 40%, #ec4899 100%);
+  background-size: 200% 100%;
+  color: white;
+  font-family: inherit;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35), 0 0 0 0 rgba(99, 102, 241, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: launch-pulse 2.5s infinite;
+  white-space: nowrap;
+}
+
+@keyframes launch-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35), 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35), 0 0 0 8px rgba(99, 102, 241, 0); }
+}
+
+.btn-launch:hover:not(:disabled) {
+  background-position: right center;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+  animation: none;
+}
+
+.btn-launch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: none;
+}
+
+/* Plan Sections */
+.plan-sections {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.plan-section {
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.plan-section--phase {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+}
+
+.plan-section--subphase {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-left: 16px;
+}
+
+.plan-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.plan-section-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.plan-section-heading {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.plan-section-items {
+  list-style: none;
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-section-item {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-left: 14px;
+  position: relative;
+}
+
+.plan-section-item::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--primary-light);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD — Accounts strip & mini cards
+   ═══════════════════════════════════════════════════════════════ */
+
+.accounts-strip {
+  margin-bottom: 28px;
+}
+
+.accounts-strip-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.accounts-strip-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.account-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  min-width: 200px;
+  flex: 1;
+  max-width: 280px;
+  transition: all 0.2s ease;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.account-mini-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.account-mini-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-mini-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-mini-avatar--initials {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: white;
+}
+
+.account-mini-platform {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  border: 2px solid var(--bg-base);
+}
+
+.account-mini-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-mini-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-mini-handle {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-mini-followers {
+  font-size: 0.72rem;
+  color: var(--primary-light);
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.account-mini-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.account-mini-status.active {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.accounts-strip-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+
+.accounts-strip-add:hover {
+  border-color: var(--primary-border);
+  color: var(--primary-light);
+  background: var(--primary-glow);
+}
+
+/* ── Recent Content Row ───────────────────────────────────────── */
+
+.recent-content-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+
+.recent-content-row:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.recent-content-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.recent-content-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-content-body {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-content-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Quick Actions Card ───────────────────────────────────────── */
+
+.quick-actions-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.06)) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+/* ── Responsive plans layout ─────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .plans-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .plans-detail {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .platform-status-bar {
+    gap: 8px;
+  }
+  
+  .platform-status-chip {
+    min-width: 130px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .account-mini-card {
+    min-width: 160px;
+    max-width: 100%;
+  }
+}
+

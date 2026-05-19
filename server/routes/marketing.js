@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { generateMarketingPlan } = require('../services/aiService');
+const { generateMarketingPlan, extractContentIdeasFromPlan } = require('../services/aiService');
 
 // GET /api/marketing - List plans
 router.get('/', (req, res) => {
@@ -24,9 +24,7 @@ router.post('/generate', async (req, res) => {
     const brand = db.prepare('SELECT * FROM brand_profiles WHERE id = 1').get();
     if (!brand) return res.status(400).json({ error: 'Brand profile not configured' });
 
-    // Get top trends for context
     const trends = db.prepare('SELECT * FROM trend_snapshots ORDER BY score DESC LIMIT 10').all();
-
     const aiResult = await generateMarketingPlan(trends, brand, { period, platforms, goals });
 
     const result = db.prepare(`
@@ -43,6 +41,50 @@ router.post('/generate', async (req, res) => {
     const plan = db.prepare('SELECT * FROM marketing_plans WHERE id = ?').get(result.lastInsertRowid);
     res.json({ success: true, plan });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/marketing/:id/launch — Convert plan into scheduled content items
+router.post('/:id/launch', async (req, res) => {
+  const plan = db.prepare('SELECT * FROM marketing_plans WHERE id = ?').get(req.params.id);
+  if (!plan) return res.status(404).json({ error: 'Plan not found' });
+
+  try {
+    const brand = db.prepare('SELECT * FROM brand_profiles WHERE id = 1').get();
+    if (!brand) return res.status(400).json({ error: 'Brand profile not configured' });
+
+    console.log(`🚀 Launching marketing plan "${plan.title}"...`);
+
+    // Extract content ideas from the plan strategy using AI
+    const ideas = await extractContentIdeasFromPlan(plan, brand);
+    console.log(`💡 Extracted ${ideas.length} content ideas from plan`);
+
+    // Save each idea as a draft content item
+    const insertStmt = db.prepare(`
+      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model)
+      VALUES (?, ?, ?, 'draft', ?, 'plan-launch')
+    `);
+
+    const created = [];
+    for (const idea of ideas) {
+      if (!idea.body || !idea.platform) continue;
+      const result = insertStmt.run(
+        idea.topic || `${plan.title} — ${idea.platform}`,
+        idea.body,
+        idea.platform,
+        JSON.stringify(idea.hashtags || []),
+      );
+      created.push(result.lastInsertRowid);
+    }
+
+    // Mark plan as launched
+    db.prepare("UPDATE marketing_plans SET status = 'launched' WHERE id = ?").run(plan.id);
+
+    console.log(`✅ Plan launched: created ${created.length} draft content items`);
+    res.json({ success: true, created: created.length, item_ids: created });
+  } catch (err) {
+    console.error('❌ Plan launch error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
