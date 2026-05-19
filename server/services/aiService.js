@@ -62,10 +62,14 @@ function mockGenerate(prompt) {
   return responses.post[Math.floor(Math.random() * responses.post.length)];
 }
 
-// Model fallback chain — tries each in order until one works
-const MODEL_CHAIN = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-8b'];
-
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// Model fallback chain — canonical names for v1beta API
+// Run: curl "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_KEY" to list available
+const MODEL_CHAIN = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash-8b',
+];
 
 async function generateContent(prompt, options = {}) {
   const client = getGeminiClient();
@@ -75,7 +79,6 @@ async function generateContent(prompt, options = {}) {
     return { text: mockGenerate(prompt), model: 'demo-mode', tokens: 0 };
   }
 
-  // Try each model in the fallback chain
   for (const modelName of MODEL_CHAIN) {
     try {
       const model = client.getGenerativeModel({ model: modelName });
@@ -88,47 +91,42 @@ async function generateContent(prompt, options = {}) {
         tokens: response.usageMetadata?.totalTokenCount || 0,
       };
     } catch (err) {
-      const is429 = err.message?.includes('429') || err.message?.includes('quota') || err.message?.includes('Too Many Requests');
-      const is404 = err.message?.includes('404') || err.message?.includes('not found');
+      const msg = err.message || '';
+      // Strict 404 check — only skip model if it genuinely doesn't exist
+      const is404 = msg.includes('[404') || (msg.includes('404') && msg.includes('not found'));
+      // Rate limit / quota check
+      const is429 = msg.includes('[429') || msg.includes('Too Many Requests') || msg.includes('quota');
 
       if (is404) {
-        // Model doesn't exist, try next
-        console.warn(`Model ${modelName} not available, trying next...`);
+        console.warn(`⚠️  Model ${modelName} not found, trying next...`);
         continue;
       }
 
       if (is429) {
-        // Extract retry delay from error if available, else use 60s
-        const retryMatch = err.message?.match(/retry in (\d+)/i);
+        const retryMatch = msg.match(/retry in (\d+)/i);
         const waitSec = retryMatch ? parseInt(retryMatch[1]) + 2 : 62;
-
-        // If there's a next model to try, try it immediately without waiting
         const nextModel = MODEL_CHAIN[MODEL_CHAIN.indexOf(modelName) + 1];
         if (nextModel) {
-          console.warn(`Rate limit on ${modelName}, trying ${nextModel}...`);
+          console.warn(`⏳ Rate limit on ${modelName}, trying ${nextModel}...`);
           continue;
         }
-
-        // All models exhausted — surface the rate limit error clearly
-        console.error(`All models rate limited. Quota resets in ~${waitSec}s`);
+        console.error(`🚫 All Gemini models rate limited (~${waitSec}s until reset)`);
         return {
-          text: null,
-          model: null,
-          error: `rate_limit`,
+          text: null, model: null, error: 'rate_limit',
           retryAfter: waitSec,
-          message: `Gemini quota exceeded. Please wait ${Math.ceil(waitSec / 60)} minute(s) and try again.`,
+          message: `Gemini quota exceeded. Wait ${Math.ceil(waitSec / 60)} min and try again.`,
         };
       }
 
-      // Unknown error — log and try next model
-      console.error(`Gemini error (${modelName}):`, err.message);
+      console.error(`Gemini error (${modelName}): ${msg.substring(0, 120)}`);
       continue;
     }
   }
 
-  // All models failed — fall back to demo
-  return { text: mockGenerate(prompt), model: 'demo-mode (all models failed)', tokens: 0 };
+  console.warn('All Gemini models failed — using demo content');
+  return { text: mockGenerate(prompt), model: 'demo-mode', tokens: 0 };
 }
+
 
 async function generateSocialPost(trend, platform, brand) {
   const platformGuidelines = {
