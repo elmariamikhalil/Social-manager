@@ -61,9 +61,28 @@ export default function SocialAccounts() {
 
   const disconnect = async (id) => {
     if (!confirm('Disconnect this account?')) return;
-    await fetch(`${API}/api/accounts/${id}`, { method: 'DELETE' });
-    showToast('Account disconnected');
-    load();
+    try {
+      const res = await fetch(`${API}/api/accounts/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to disconnect account');
+      }
+      showToast('✅ Account disconnected successfully!');
+      load();
+    } catch (err) {
+      showToast(`❌ ${err.message}`, 'error');
+    }
+  };
+
+  const toggleActive = async (id) => {
+    try {
+      const res = await fetch(`${API}/api/accounts/${id}/toggle`, { method: 'PUT' });
+      if (!res.ok) throw new Error('Failed to toggle account status');
+      showToast('⚡ Account active status updated!');
+      load();
+    } catch (err) {
+      showToast(`❌ ${err.message}`, 'error');
+    }
   };
 
   const PLATFORM_ICONS = { instagram: '📸', facebook: '📘', twitter: '🐦', linkedin: '💼', tiktok: '🎵' };
@@ -143,6 +162,7 @@ export default function SocialAccounts() {
               key={account.id}
               account={account}
               onDisconnect={disconnect}
+              onToggle={toggleActive}
               platformIcon={PLATFORM_ICONS[account.platform] || '📱'}
               platformColor={PLATFORM_COLORS[account.platform] || 'var(--text-primary)'}
             />
@@ -193,7 +213,7 @@ export default function SocialAccounts() {
   );
 }
 
-function AccountCard({ account, onDisconnect, platformIcon, platformColor }) {
+function AccountCard({ account, onDisconnect, onToggle, platformIcon, platformColor }) {
   return (
     <div className="card glow-hover" style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -219,9 +239,23 @@ function AccountCard({ account, onDisconnect, platformIcon, platformColor }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <span className={`badge badge-${account.platform}`}>{platformIcon} {account.platform}</span>
         {account.account_id?.startsWith('demo_') && <span className="badge badge-demo">Demo</span>}
-        <span className={`badge ${account.is_active ? 'badge-published' : 'badge-draft'}`}>
-          {account.is_active ? 'Active' : 'Inactive'}
-        </span>
+        <button
+          className={`badge ${account.is_active ? 'badge-published' : 'badge-draft'}`}
+          onClick={() => onToggle(account.id)}
+          style={{
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            transition: 'all 0.2s ease',
+          }}
+          title="Click to toggle active status"
+        >
+          {account.is_active ? '🟢 Active' : '⚪ Inactive'}
+        </button>
       </div>
 
       {account.page_name && (

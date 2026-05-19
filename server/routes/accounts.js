@@ -124,8 +124,21 @@ router.post('/demo', (req, res) => {
 
 // DELETE /api/accounts/:id - Disconnect account
 router.delete('/:id', (req, res) => {
-  db.prepare('DELETE FROM social_accounts WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
+  try {
+    const accountId = parseInt(req.params.id);
+    db.transaction(() => {
+      // 1. Unlink account from content items (set account_id = NULL)
+      db.prepare('UPDATE content_items SET account_id = NULL WHERE account_id = ?').run(accountId);
+      // 2. Delete growth snapshots associated with this account
+      db.prepare('DELETE FROM growth_snapshots WHERE account_id = ?').run(accountId);
+      // 3. Delete from social_accounts
+      db.prepare('DELETE FROM social_accounts WHERE id = ?').run(accountId);
+    })();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Disconnect account error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // PUT /api/accounts/:id/toggle - Toggle active status

@@ -40,6 +40,11 @@ export default function ContentStudio() {
       .then(d => setAccounts(d.accounts || []));
   }, []);
 
+  useEffect(() => {
+    const matching = accounts.find(a => a.platform === platform && a.is_active);
+    setSelectedAccount(matching ? matching.id.toString() : '');
+  }, [platform, accounts]);
+
   const generate = async () => {
     setGenerating(true);
     try {
@@ -146,17 +151,22 @@ export default function ContentStudio() {
           </div>
 
           {/* Account Selector */}
-          {accounts.length > 0 && (
-            <div className="card" style={{ marginBottom: 20 }}>
-              <div className="card-title" style={{ marginBottom: 12 }}>🔗 Post As</div>
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div className="card-title" style={{ marginBottom: 12 }}>🔗 Post As</div>
+            {accounts.filter(a => a.platform === platform && a.is_active).length > 0 ? (
               <select className="form-select" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)}>
                 <option value="">No account linked</option>
-                {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.account_name} ({a.platform})</option>
+                {accounts.filter(a => a.platform === platform && a.is_active).map(a => (
+                  <option key={a.id} value={a.id}>{a.account_name}</option>
                 ))}
               </select>
-            </div>
-          )}
+            ) : (
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                No active {platform.charAt(0).toUpperCase() + platform.slice(1)} account connected. 
+                <a href="/accounts" style={{ marginLeft: 4, color: 'var(--primary)', textDecoration: 'underline' }}>Link one →</a>
+              </div>
+            )}
+          </div>
 
           {/* Custom Topic */}
           <div className="card" style={{ marginBottom: 20 }}>
