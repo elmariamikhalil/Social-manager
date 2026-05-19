@@ -25,17 +25,27 @@ const NAV = [
   { path: '/settings', icon: '⚙️', label: 'Settings', group: 'settings' },
 ];
 
-function Sidebar({ apiStatus, queueCount }) {
+function Sidebar({ apiStatus, queueCount, isOpen, onClose }) {
   const location = useLocation();
 
+  // Close mobile sidebar when a nav link is clicked
+  const handleLinkClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
         <div className="logo-icon">🚀</div>
         <div>
           <div className="logo-text">SocialAI</div>
           <div className="logo-sub">Marketing Manager</div>
         </div>
+        {onClose && (
+          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
+            ✕
+          </button>
+        )}
       </div>
 
       <nav className="sidebar-nav">
@@ -46,6 +56,7 @@ function Sidebar({ apiStatus, queueCount }) {
             to={item.path}
             end={item.path === '/'}
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleLinkClick}
           >
             <span className="nav-icon">{item.icon}</span>
             <span>{item.label}</span>
@@ -61,6 +72,7 @@ function Sidebar({ apiStatus, queueCount }) {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleLinkClick}
           >
             <span className="nav-icon">{item.icon}</span>
             <span>{item.label}</span>
@@ -73,6 +85,7 @@ function Sidebar({ apiStatus, queueCount }) {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleLinkClick}
           >
             <span className="nav-icon">{item.icon}</span>
             <span>{item.label}</span>
@@ -95,6 +108,7 @@ function Sidebar({ apiStatus, queueCount }) {
 export default function App() {
   const [apiStatus, setApiStatus] = useState(null);
   const [queueCount, setQueueCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/api/settings/api-status`)
@@ -116,7 +130,28 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app-layout">
-        <Sidebar apiStatus={apiStatus} queueCount={queueCount} />
+        {/* Mobile top bar */}
+        <header className="mobile-header">
+          <button className="hamburger-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+            ☰
+          </button>
+          <div className="mobile-logo">
+            <span style={{ marginRight: 6 }}>🚀</span>SocialAI
+          </div>
+        </header>
+
+        {/* Sidebar overlay backdrop for mobile */}
+        {mobileOpen && (
+          <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
+        )}
+
+        <Sidebar 
+          apiStatus={apiStatus} 
+          queueCount={queueCount} 
+          isOpen={mobileOpen} 
+          onClose={() => setMobileOpen(false)} 
+        />
+        
         <main className="main-content">
           <div className="page-container">
             <Routes>
