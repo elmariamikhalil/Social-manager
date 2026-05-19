@@ -52,10 +52,20 @@ router.post('/generate', async (req, res) => {
     if (tone_override) brand.tone = tone_override;
 
     const aiResult = await generateSocialPost(trend, platform, brand);
+
+    // Surface rate limit errors clearly to the client
+    if (aiResult.error === 'rate_limit') {
+      return res.status(429).json({
+        error: aiResult.message,
+        retry_after: aiResult.retryAfter,
+        hint: 'Gemini free tier quota exceeded. Wait a minute and try again, or add billing at console.cloud.google.com',
+      });
+    }
+
     const imagePromptResult = await generateImagePrompt(aiResult.text, brand);
 
     // Auto-extract hashtags
-    const hashtagMatches = aiResult.text.match(/#\w+/g) || [];
+    const hashtagMatches = aiResult.text?.match(/#\w+/g) || [];
 
     // Save as draft
     const result = db.prepare(`
@@ -66,7 +76,7 @@ router.post('/generate', async (req, res) => {
       aiResult.text,
       platform,
       JSON.stringify(hashtagMatches),
-      imagePromptResult.text,
+      imagePromptResult?.text || null,
       trend_id || null,
       account_id || null,
       aiResult.model

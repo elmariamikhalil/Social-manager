@@ -62,6 +62,11 @@ function mockGenerate(prompt) {
   return responses.post[Math.floor(Math.random() * responses.post.length)];
 }
 
+// Model fallback chain — tries each in order until one works
+const MODEL_CHAIN = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-8b'];
+
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function generateContent(prompt, options = {}) {
   const client = getGeminiClient();
 
@@ -70,19 +75,59 @@ async function generateContent(prompt, options = {}) {
     return { text: mockGenerate(prompt), model: 'demo-mode', tokens: 0 };
   }
 
-  try {
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return {
-      text: response.text(),
-      model: 'gemini-2.0-flash',
-      tokens: response.usageMetadata?.totalTokenCount || 0,
-    };
-  } catch (err) {
-    console.error('Gemini error:', err.message);
-    return { text: mockGenerate(prompt), model: 'demo-mode (fallback)', tokens: 0 };
+  // Try each model in the fallback chain
+  for (const modelName of MODEL_CHAIN) {
+    try {
+      const model = client.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      console.log(`✅ Generated with ${modelName}`);
+      return {
+        text: response.text(),
+        model: modelName,
+        tokens: response.usageMetadata?.totalTokenCount || 0,
+      };
+    } catch (err) {
+      const is429 = err.message?.includes('429') || err.message?.includes('quota') || err.message?.includes('Too Many Requests');
+      const is404 = err.message?.includes('404') || err.message?.includes('not found');
+
+      if (is404) {
+        // Model doesn't exist, try next
+        console.warn(`Model ${modelName} not available, trying next...`);
+        continue;
+      }
+
+      if (is429) {
+        // Extract retry delay from error if available, else use 60s
+        const retryMatch = err.message?.match(/retry in (\d+)/i);
+        const waitSec = retryMatch ? parseInt(retryMatch[1]) + 2 : 62;
+
+        // If there's a next model to try, try it immediately without waiting
+        const nextModel = MODEL_CHAIN[MODEL_CHAIN.indexOf(modelName) + 1];
+        if (nextModel) {
+          console.warn(`Rate limit on ${modelName}, trying ${nextModel}...`);
+          continue;
+        }
+
+        // All models exhausted — surface the rate limit error clearly
+        console.error(`All models rate limited. Quota resets in ~${waitSec}s`);
+        return {
+          text: null,
+          model: null,
+          error: `rate_limit`,
+          retryAfter: waitSec,
+          message: `Gemini quota exceeded. Please wait ${Math.ceil(waitSec / 60)} minute(s) and try again.`,
+        };
+      }
+
+      // Unknown error — log and try next model
+      console.error(`Gemini error (${modelName}):`, err.message);
+      continue;
+    }
   }
+
+  // All models failed — fall back to demo
+  return { text: mockGenerate(prompt), model: 'demo-mode (all models failed)', tokens: 0 };
 }
 
 async function generateSocialPost(trend, platform, brand) {
