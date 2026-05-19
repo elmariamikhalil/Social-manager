@@ -30,22 +30,42 @@ router.get('/meta/callback', async (req, res) => {
   const { code, error } = req.query;
 
   if (error) {
+    console.error('❌ Meta OAuth error from callback query:', error);
     return res.redirect(`${process.env.CLIENT_URL}/accounts?error=${encodeURIComponent(error)}`);
   }
 
   try {
+    console.log('🔄 Meta OAuth: Starting token exchange...');
     // Exchange code for short-lived token
     const tokenData = await metaService.exchangeCodeForToken(code);
+    console.log('🔑 Meta OAuth: Received short-lived token.');
+
     // Exchange for long-lived token
     const longToken = await metaService.getLongLivedToken(tokenData.access_token);
+    console.log('🔑 Meta OAuth: Exchanged for long-lived token.');
+
     // Get user profile
     const profile = await metaService.getUserProfile(longToken.access_token);
+    console.log(`👤 Meta OAuth: Profile retrieved: ${profile.name} (ID: ${profile.id})`);
+
     // Get user's pages
     const pages = await metaService.getUserPages(longToken.access_token);
+    console.log(`📄 Meta OAuth: Retrieved ${pages.length} pages from Meta Graph API:`, pages.map(p => ({ id: p.id, name: p.name })));
+
+    if (pages.length === 0) {
+      console.warn('⚠️ Meta OAuth warning: No pages returned! Ensure you selected the pages in the Facebook login dialog, and that the app has the necessary page permissions (e.g. pages_show_list, pages_read_engagement).');
+    }
 
     for (const page of pages) {
+      console.log(`⚙️ Meta OAuth: Processing page "${page.name}" (ID: ${page.id})...`);
       // Get Instagram account linked to page
       const igAccount = await metaService.getInstagramAccount(page.id, page.access_token);
+
+      if (igAccount) {
+        console.log(`📸 Meta OAuth: Found linked Instagram Business Account: @${igAccount.username} (ID: ${igAccount.id})`);
+      } else {
+        console.log(`⚪ Meta OAuth: No Instagram Business Account linked to page "${page.name}".`);
+      }
 
       // Save Facebook Page account
       db.prepare(`
@@ -61,6 +81,7 @@ router.get('/meta/callback', async (req, res) => {
         page.id,
         page.name
       );
+      console.log(`💾 Meta OAuth: Saved Facebook Page: "${page.name}" to database.`);
 
       // Save Instagram Business account if connected
       if (igAccount) {
@@ -77,12 +98,13 @@ router.get('/meta/callback', async (req, res) => {
           page.id,
           page.name
         );
+        console.log(`💾 Meta OAuth: Saved Instagram account: "@${igAccount.username}" to database.`);
       }
     }
 
     res.redirect(`${process.env.CLIENT_URL}/accounts?success=true`);
   } catch (err) {
-    console.error('Meta OAuth error:', err.message);
+    console.error('❌ Meta OAuth error:', err.message);
     res.redirect(`${process.env.CLIENT_URL}/accounts?error=${encodeURIComponent(err.message)}`);
   }
 });
