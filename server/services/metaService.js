@@ -88,16 +88,19 @@ async function getInstagramAccount(pageId, pageAccessToken) {
 
 async function publishToFacebook(pageId, pageToken, content, imageUrl = null) {
   try {
-    const params = {
-      access_token: pageToken,
-      message: content.body,
-    };
-
+    let response;
     if (imageUrl) {
-      params.link = imageUrl;
+      response = await axios.post(`${META_BASE}/${pageId}/photos`, {
+        access_token: pageToken,
+        url: imageUrl,
+        caption: content.body,
+      });
+    } else {
+      response = await axios.post(`${META_BASE}/${pageId}/feed`, {
+        access_token: pageToken,
+        message: content.body,
+      });
     }
-
-    const response = await axios.post(`${META_BASE}/${pageId}/feed`, params);
     return {
       success: true,
       post_id: response.data.id,

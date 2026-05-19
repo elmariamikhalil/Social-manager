@@ -5,6 +5,24 @@ const isMetaConfigured = () =>
   process.env.META_APP_ID &&
   process.env.META_APP_ID !== 'your_meta_app_id';
 
+function getAbsoluteImageUrl(relativeUrl) {
+  if (!relativeUrl) return null;
+  if (relativeUrl.startsWith('http')) return relativeUrl;
+  
+  let baseUrl = process.env.APP_URL;
+  if (!baseUrl && process.env.META_REDIRECT_URI) {
+    try {
+      const parsed = new URL(process.env.META_REDIRECT_URI);
+      baseUrl = `${parsed.protocol}//${parsed.host}`;
+    } catch (e) {
+      baseUrl = 'https://agent.kael.es';
+    }
+  }
+  if (!baseUrl) baseUrl = 'https://agent.kael.es';
+  
+  return `${baseUrl.replace(/\/$/, '')}${relativeUrl}`;
+}
+
 async function publishContent(contentId) {
   const content = db.prepare('SELECT * FROM content_items WHERE id = ?').get(contentId);
   if (!content) throw new Error(`Content ${contentId} not found`);
@@ -14,6 +32,7 @@ async function publishContent(contentId) {
     : null;
 
   let result;
+  const absoluteImageUrl = getAbsoluteImageUrl(content.image_url);
 
   // Demo mode if no real credentials
   if (!isMetaConfigured() || !account) {
@@ -26,14 +45,14 @@ async function publishContent(contentId) {
           account.page_id,
           account.access_token,
           content,
-          content.image_url
+          absoluteImageUrl
         );
       } else if (content.platform === 'instagram') {
         result = await metaService.publishToInstagram(
           account.account_id,
           account.access_token,
           content,
-          content.image_url
+          absoluteImageUrl
         );
       } else {
         result = await metaService.mockPublish(content.platform, content);
