@@ -219,4 +219,60 @@ Return ONLY a JSON object: {"score": number, "reason": "one sentence explanation
   }
 }
 
-module.exports = { generateContent, generateSocialPost, generateImagePrompt, generateMarketingPlan, scoreContentIdea };
+async function generateImage(promptText) {
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+    return null;
+  }
+
+  const axios = require('axios');
+  const fs = require('fs');
+  const path = require('path');
+
+  try {
+    const model = 'imagen-4.0-fast-generate-001';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${process.env.GEMINI_API_KEY}`;
+    
+    console.log(`🎨 Requesting image from Imagen 4 for prompt: "${promptText.substring(0, 60)}..."`);
+    const response = await axios.post(url, {
+      instances: [
+        { prompt: promptText }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: '1:1',
+      }
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 25000,
+    });
+
+    const prediction = response.data?.predictions?.[0];
+    if (prediction && prediction.bytesBase64Encoded) {
+      const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
+      
+      const uploadsDir = path.join(__dirname, '../uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const filename = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.png`;
+      const filepath = path.join(uploadsDir, filename);
+      
+      fs.writeFileSync(filepath, buffer);
+      console.log(`💾 Saved generated image to: ${filepath}`);
+      return `/uploads/${filename}`;
+    }
+  } catch (err) {
+    console.error('❌ Imagen generation failed:', err.response?.data || err.message);
+  }
+  return null;
+}
+
+module.exports = {
+  generateContent,
+  generateSocialPost,
+  generateImagePrompt,
+  generateMarketingPlan,
+  scoreContentIdea,
+  generateImage
+};

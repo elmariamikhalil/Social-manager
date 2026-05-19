@@ -51,6 +51,9 @@ io.on('connection', (socket) => {
 
 app.set('io', io);
 
+// Serve uploaded/generated images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // ── Production: Serve React build from Express ─────────────────
 if (IS_PROD) {
   const clientBuild = path.join(__dirname, '../client/dist');

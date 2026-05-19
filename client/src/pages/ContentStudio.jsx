@@ -295,6 +295,16 @@ function GeneratedCard({ item, onApprove, onPublishNow, onDelete, onUpdateBody }
         </div>
       )}
 
+      {item.image_url && !editing && (
+        <div style={{ marginTop: 12 }}>
+          <img 
+            src={item.image_url.startsWith('http') ? item.image_url : `${API}${item.image_url}`} 
+            alt="AI Generated" 
+            style={{ width: '100%', maxHeight: 350, objectFit: 'cover', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }} 
+          />
+        </div>
+      )}
+
       <div className="content-actions">
         {editing ? (
           <>

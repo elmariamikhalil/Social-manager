@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { generateSocialPost, generateImagePrompt, scoreContentIdea } = require('../services/aiService');
+const { generateSocialPost, generateImagePrompt, scoreContentIdea, generateImage } = require('../services/aiService');
 
 // GET /api/content - List all content
 router.get('/', (req, res) => {
@@ -64,19 +64,26 @@ router.post('/generate', async (req, res) => {
 
     const imagePromptResult = await generateImagePrompt(aiResult.text, brand);
 
+    // Generate actual image using Imagen 4
+    let imageUrl = null;
+    if (imagePromptResult?.text) {
+      imageUrl = await generateImage(imagePromptResult.text);
+    }
+
     // Auto-extract hashtags
     const hashtagMatches = aiResult.text?.match(/#\w+/g) || [];
 
     // Save as draft
     const result = db.prepare(`
-      INSERT INTO content_items (title, body, platform, hashtags, image_prompt, trend_id, account_id, ai_model, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+      INSERT INTO content_items (title, body, platform, hashtags, image_prompt, image_url, trend_id, account_id, ai_model, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `).run(
       trend.topic.substring(0, 100),
       aiResult.text,
       platform,
       JSON.stringify(hashtagMatches),
       imagePromptResult?.text || null,
+      imageUrl,
       trend_id || null,
       account_id || null,
       aiResult.model

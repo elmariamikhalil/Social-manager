@@ -4,10 +4,9 @@ const RSSParser = require('rss-parser');
 
 const parser = new RSSParser();
 
-// Default subreddits for trend discovery
 const DEFAULT_SUBREDDITS = [
   'marketing', 'socialmedia', 'entrepreneur', 'smallbusiness',
-  'digitalmarketing', 'contentcreation', 'InstagramMarketing'
+  'digitalmarketing', 'contentcreation',
 ];
 
 const RSS_FEEDS = [
@@ -18,45 +17,14 @@ const RSS_FEEDS = [
 ];
 
 async function getRedditAccessToken() {
-  if (!process.env.REDDIT_CLIENT_ID || process.env.REDDIT_CLIENT_ID === 'your_reddit_client_id') {
-    return null;
-  }
-  try {
-    // Reddit "script" apps use password grant (requires your Reddit username+password)
-    // Reddit "web app" type uses client_credentials
-    const hasUserCreds = process.env.REDDIT_USERNAME && process.env.REDDIT_PASSWORD;
-    const grantBody = hasUserCreds
-      ? `grant_type=password&username=${encodeURIComponent(process.env.REDDIT_USERNAME)}&password=${encodeURIComponent(process.env.REDDIT_PASSWORD)}`
-      : 'grant_type=client_credentials';
-
-    const response = await axios.post(
-      'https://www.reddit.com/api/v1/access_token',
-      grantBody,
-      {
-        auth: { username: process.env.REDDIT_CLIENT_ID, password: process.env.REDDIT_CLIENT_SECRET },
-        headers: {
-          'User-Agent': process.env.REDDIT_USER_AGENT || 'SocialManager/1.0',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-    return response.data.access_token;
-  } catch (err) {
-    console.error('Reddit auth error:', err.message);
-    return null;
-  }
+  return null;
 }
 
-// Reddit RSS feeds — work from any server, no auth needed
-const REDDIT_RSS_SUBS = [
-  'marketing', 'socialmedia', 'entrepreneur', 'smallbusiness',
-  'digitalmarketing', 'contentcreation',
-];
-
-async function fetchRedditTrends() {
+async function fetchRedditTrends(subreddits = DEFAULT_SUBREDDITS) {
   const trends = [];
+  const subsToFetch = subreddits.slice(0, 6);
 
-  for (const sub of REDDIT_RSS_SUBS.slice(0, 5)) {
+  for (const sub of subsToFetch) {
     try {
       const feed = await parser.parseURL(
         `https://www.reddit.com/r/${sub}/hot/.rss`
@@ -108,7 +76,7 @@ async function fetchRSSFeeds() {
   return trends;
 }
 
-async function fetchGoogleTrends(keywords = []) {
+async function fetchGoogleTrends() {
   if (!process.env.SERPAPI_KEY || process.env.SERPAPI_KEY === 'your_serpapi_key_here') {
     return [];
   }
@@ -166,9 +134,38 @@ function getDemoTrends() {
 }
 
 async function fetchAllTrends(config = {}) {
-  const subreddits = config.subreddits || DEFAULT_SUBREDDITS;
+  let brandSubreddits = [];
+  try {
+    const db = require('../db/database');
+    const brand = db.prepare('SELECT * FROM brand_profiles WHERE id = 1').get();
+    if (brand) {
+      if (brand.niche && brand.niche !== 'general' && brand.niche !== 'lifestyle') {
+        const cleanNiche = brand.niche.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanNiche) brandSubreddits.push(cleanNiche);
+      }
+      
+      // Attempt to clean brand keywords
+      let keywords = [];
+      try {
+        keywords = JSON.parse(brand.keywords || '[]');
+      } catch (e) {
+        keywords = [];
+      }
+      
+      for (const kw of keywords) {
+        const cleanKw = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanKw) brandSubreddits.push(cleanKw);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load brand niche for trends:', e.message);
+  }
+
+  const defaultSubs = config.subreddits || DEFAULT_SUBREDDITS;
+  const combinedSubreddits = [...new Set([...brandSubreddits, ...defaultSubs])];
+
   const [redditTrends, rssTrends, googleTrends] = await Promise.allSettled([
-    fetchRedditTrends(subreddits),
+    fetchRedditTrends(combinedSubreddits),
     fetchRSSFeeds(),
     fetchGoogleTrends(),
   ]);
