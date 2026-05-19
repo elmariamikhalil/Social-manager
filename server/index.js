@@ -56,7 +56,7 @@ if (IS_PROD) {
   const clientBuild = path.join(__dirname, '../client/dist');
   app.use(express.static(clientBuild));
   // All non-API routes serve React's index.html (SPA routing)
-  app.get('*', (req, res) => {
+  app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(clientBuild, 'index.html'));
   });
 }
