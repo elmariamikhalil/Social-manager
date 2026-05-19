@@ -63,12 +63,10 @@ function mockGenerate(prompt) {
 }
 
 // Model fallback chain — canonical names for v1beta API
-// Run: curl "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_KEY" to list available
 const MODEL_CHAIN = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash-8b',
+  'gemini-2.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-3-flash-preview',
 ];
 
 async function generateContent(prompt, options = {}) {
