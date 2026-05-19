@@ -71,12 +71,12 @@ async function generateContent(prompt, options = {}) {
   }
 
   try {
-    const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return {
       text: response.text(),
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       tokens: response.usageMetadata?.totalTokenCount || 0,
     };
   } catch (err) {

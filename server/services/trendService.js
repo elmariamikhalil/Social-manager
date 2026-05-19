@@ -48,20 +48,18 @@ async function getRedditAccessToken() {
 }
 
 async function fetchRedditTrends(subreddits = DEFAULT_SUBREDDITS, limit = 5) {
-  const token = await getRedditAccessToken();
   const trends = [];
 
   for (const sub of subreddits.slice(0, 4)) {
     try {
-      const headers = token
-        ? { Authorization: `Bearer ${token}`, 'User-Agent': process.env.REDDIT_USER_AGENT || 'SocialManager/1.0' }
-        : { 'User-Agent': 'SocialManager/1.0' };
-
-      const url = token
-        ? `https://oauth.reddit.com/r/${sub}/hot.json?limit=${limit}`
-        : `https://www.reddit.com/r/${sub}/hot.json?limit=${limit}`;
-
-      const response = await axios.get(url, { headers, timeout: 8000 });
+      // Use public Reddit JSON API — no OAuth needed for public subreddits
+      const response = await axios.get(
+        `https://www.reddit.com/r/${sub}/hot.json?limit=${limit}`,
+        {
+          headers: { 'User-Agent': process.env.REDDIT_USER_AGENT || 'SocialManager/1.0' },
+          timeout: 8000,
+        }
+      );
       const posts = response.data?.data?.children || [];
 
       for (const post of posts) {
