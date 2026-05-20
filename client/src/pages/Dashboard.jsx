@@ -192,7 +192,7 @@ function PlatformCard({ account, idx }) {
 }
 
 /* ── Mini Calendar ─────────────────────────────────────────────── */
-function CalendarWidget({ scheduledDays = [] }) {
+function CalendarWidget({ queuedItems = [] }) {
   const [cur, setCur] = useState(new Date());
   const today = new Date();
   const year  = cur.getFullYear();
@@ -210,6 +210,14 @@ function CalendarWidget({ scheduledDays = [] }) {
     d === today.getDate() &&
     month === today.getMonth() &&
     year  === today.getFullYear();
+
+  const hasEvent = (d) => {
+    return queuedItems.some(item => {
+      if (!item.scheduled_at) return false;
+      const date = new Date(item.scheduled_at);
+      return date.getDate() === d && date.getMonth() === month && date.getFullYear() === year;
+    });
+  };
 
   return (
     <div className="calendar-widget">
@@ -238,7 +246,7 @@ function CalendarWidget({ scheduledDays = [] }) {
               'cal-day',
               day === null ? 'empty' : '',
               day && isToday(day) ? 'today' : '',
-              day && scheduledDays.includes(day) ? 'has-event' : '',
+              day && hasEvent(day) ? 'has-event' : '',
             ].join(' ')}
           >
             {day}
@@ -686,7 +694,7 @@ export default function Dashboard({ apiStatus }) {
 
         {/* ── Right Panel ──────────────────────────────────── */}
         <div className="dashboard-right-panel">
-          <CalendarWidget scheduledDays={[]} />
+          <CalendarWidget queuedItems={queuedItems} />
           <ScheduledSection items={queuedItems} />
           {accounts.length > 0 && <FollowersPanel accounts={accounts} />}
 

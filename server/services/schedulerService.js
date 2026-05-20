@@ -94,7 +94,7 @@ async function runGenerateImages() {
     try {
       const url = await generateImage(item.image_prompt);
       if (url) {
-        db.prepare('UPDATE content_items SET image_url = ?, updated_at = datetime("now") WHERE id = ?').run(url, item.id);
+        db.prepare(`UPDATE content_items SET image_url = ?, updated_at = datetime('now') WHERE id = ?`).run(url, item.id);
         count++;
       }
     } catch (err) {

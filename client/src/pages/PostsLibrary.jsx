@@ -100,10 +100,65 @@ function PostAnalytics({ itemId }) {
   );
 }
 
+function NativePostPreview({ item, onPublish, onRemove }) {
+  const name = item.account_name || 'My Brand';
+  const initial = name[0].toUpperCase();
+  const handle = '@' + name.toLowerCase().replace(/\s+/g, '');
+
+  return (
+    <div className="studio-preview-card" style={{ margin: 0, width: '100%', maxWidth: '100%' }}>
+      <div className="studio-preview-header">
+        <div className="studio-preview-user">
+          <div className="studio-preview-avatar">{initial}</div>
+          <div>
+            <div className="studio-preview-name">{name}</div>
+            <div className="studio-preview-handle">{handle} · {item.platform}</div>
+          </div>
+        </div>
+        <PlatformIcon platform={item.platform} size={24} />
+      </div>
+
+      {/* Mock Image Wrapper */}
+      {item.image_url ? (
+        <div style={{ width: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={`${API}${item.image_url}`} alt="Generated visual" style={{ width: '100%', display: 'block', maxHeight: 400, objectFit: 'cover' }} />
+        </div>
+      ) : item.image_prompt ? (
+        <div style={{ width: '100%', height: 250, background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10 }}>
+          <span className="spinner" style={{ width: 24, height: 24 }} />
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generating image...</span>
+        </div>
+      ) : null}
+
+      <div className="studio-preview-body" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {item.body}
+      </div>
+
+      <div className="studio-preview-footer">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className={`badge badge-${item.status}`}>{item.status}</span>
+          {item.scheduled_at && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              📅 {new Date(item.scheduled_at).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="studio-preview-actions">
+          {item.status === 'queued' && (
+            <button className="btn btn-primary btn-sm" onClick={() => onPublish(item.id)}>🚀 Post</button>
+          )}
+          <button className="btn btn-danger btn-sm" onClick={() => onRemove(item.id)}>🗑️</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PostsLibrary() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('published'); // 'published' | 'queue'
+  const [platformFilter, setPlatformFilter] = useState('all'); // 'all', 'instagram', 'facebook', etc.
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
@@ -146,7 +201,10 @@ export default function PostsLibrary() {
   };
 
   const publishedItems = items.filter(i => i.status === 'published');
-  const queueItems = items.filter(i => i.status !== 'published');
+  const allQueueItems = items.filter(i => i.status !== 'published');
+  const queueItems = platformFilter === 'all' ? allQueueItems : allQueueItems.filter(i => i.platform === platformFilter);
+
+  const platforms = ['all', ...new Set(allQueueItems.map(i => i.platform))];
 
   return (
     <div>
@@ -171,7 +229,7 @@ export default function PostsLibrary() {
           className={`btn ${activeTab === 'queue' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setActiveTab('queue')}
         >
-          ⏳ Scheduled & Drafts ({queueItems.length})
+          ⏳ Scheduled & Drafts ({allQueueItems.length})
         </button>
       </div>
 
@@ -227,39 +285,37 @@ export default function PostsLibrary() {
         </div>
       ) : (
         <div>
+          {/* Platform Filter */}
+          {allQueueItems.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+              {platforms.map(p => (
+                <button
+                  key={p}
+                  className={`btn btn-sm ${platformFilter === p ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ textTransform: 'capitalize' }}
+                  onClick={() => setPlatformFilter(p)}
+                >
+                  {p === 'all' ? 'All Platforms' : p}
+                </button>
+              ))}
+            </div>
+          )}
+
           {queueItems.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">⏳</div>
-              <h3>Queue is empty</h3>
+              <h3>{allQueueItems.length === 0 ? 'Queue is empty' : 'No posts for this platform'}</h3>
               <p>Generate some content in the Content Studio to fill up your queue.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20, alignItems: 'start' }}>
               {queueItems.map(item => (
-                <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <PlatformIcon platform={item.platform} size={32} />
-                      <div>
-                        <span className={`badge badge-${item.status}`}>{item.status}</span>
-                        {item.scheduled_at && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: 8 }}>
-                            📅 {new Date(item.scheduled_at).toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {item.status === 'queued' && (
-                        <button className="btn btn-primary btn-sm" onClick={() => publishItem(item.id)}>🚀 Post Now</button>
-                      )}
-                      <button className="btn btn-danger btn-sm" onClick={() => removeItem(item.id)}>🗑️</button>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', paddingLeft: 44 }}>
-                    {item.body}
-                  </div>
-                </div>
+                <NativePostPreview 
+                  key={item.id} 
+                  item={item} 
+                  onPublish={publishItem} 
+                  onRemove={removeItem} 
+                />
               ))}
             </div>
           )}
