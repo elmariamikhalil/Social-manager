@@ -121,7 +121,7 @@ function NativePostPreview({ item, onPublish, onRemove }) {
       {/* Mock Image Wrapper */}
       {item.image_url ? (
         <div style={{ width: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={`${API}${item.image_url}`} alt="Generated visual" style={{ width: '100%', display: 'block', maxHeight: 400, objectFit: 'cover' }} />
+          <img src={item.image_url.startsWith('http') ? item.image_url : `${API}${item.image_url}`} alt="Generated visual" style={{ width: '100%', display: 'block', maxHeight: 400, objectFit: 'cover' }} />
         </div>
       ) : item.image_prompt ? (
         <div style={{ width: '100%', height: 250, background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10 }}>
