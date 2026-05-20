@@ -167,6 +167,56 @@ async function getPageInsights(pageId, pageToken, metrics = ['page_fans', 'page_
   }
 }
 
+async function getFacebookPostInsights(postId, pageToken) {
+  try {
+    const response = await axios.get(`${META_BASE}/${postId}`, {
+      params: {
+        access_token: pageToken,
+        fields: 'insights.metric(post_impressions_unique,post_engaged_users),comments.summary(total_count).limit(0),reactions.summary(total_count).limit(0),shares',
+      },
+    });
+    
+    const data = response.data;
+    const insights = data.insights?.data || [];
+    const reach = insights.find(i => i.name === 'post_impressions_unique')?.values?.[0]?.value || 0;
+    
+    return {
+      likes: data.reactions?.summary?.total_count || 0,
+      comments: data.comments?.summary?.total_count || 0,
+      shares: data.shares?.count || 0,
+      reach: reach,
+    };
+  } catch (err) {
+    console.error('FB post insights error:', err.message);
+    return { likes: 0, comments: 0, shares: 0, reach: 0 };
+  }
+}
+
+async function getInstagramPostInsights(mediaId, pageToken) {
+  try {
+    const response = await axios.get(`${META_BASE}/${mediaId}`, {
+      params: {
+        access_token: pageToken,
+        fields: 'like_count,comments_count,insights.metric(reach,saved)',
+      },
+    });
+    
+    const data = response.data;
+    const insights = data.insights?.data || [];
+    const reach = insights.find(i => i.name === 'reach')?.values?.[0]?.value || 0;
+    
+    return {
+      likes: data.like_count || 0,
+      comments: data.comments_count || 0,
+      shares: 0, // IG doesn't easily expose shares via basic Graph API on media object
+      reach: reach,
+    };
+  } catch (err) {
+    console.error('IG post insights error:', err.message);
+    return { likes: 0, comments: 0, shares: 0, reach: 0 };
+  }
+}
+
 async function getInstagramInsights(igAccountId, pageToken) {
   try {
     const response = await axios.get(`${META_BASE}/${igAccountId}`, {
@@ -205,5 +255,7 @@ module.exports = {
   publishToInstagram,
   getPageInsights,
   getInstagramInsights,
+  getFacebookPostInsights,
+  getInstagramPostInsights,
   mockPublish,
 };
