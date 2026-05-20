@@ -114,7 +114,18 @@ async function runGenerateImages() {
       const realPhotoUrl = mockRealPhotoUrls[Math.floor(Math.random() * mockRealPhotoUrls.length)];
 
       console.log(`🖼️ Compositing template with Cloudinary for platform: ${item.platform}`);
-      const finalImageUrl = await generateTemplateGraphic(realPhotoUrl, templateData.headline, item.platform);
+      let finalImageUrl;
+      try {
+        finalImageUrl = await generateTemplateGraphic(realPhotoUrl, templateData.headline, item.platform);
+      } catch (cloudErr) {
+        if (cloudErr.http_code === 400 || cloudErr.http_code === 429) {
+          console.warn(`⚠️ Cloudinary/Wikimedia rate limit hit (429). Using fallback placeholder.`);
+          const fallbackUrl = `https://placehold.co/800x800/1e293b/FFFFFF.png?text=Real+Photo+Mock`;
+          finalImageUrl = await generateTemplateGraphic(fallbackUrl, templateData.headline, item.platform);
+        } else {
+          throw cloudErr;
+        }
+      }
 
       if (finalImageUrl) {
         db.prepare(`UPDATE content_items SET image_url = ?, updated_at = datetime('now') WHERE id = ?`).run(finalImageUrl, item.id);
