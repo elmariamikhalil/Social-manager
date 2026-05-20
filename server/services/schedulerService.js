@@ -104,11 +104,12 @@ async function runGenerateImages() {
       console.log(`🔍 Searching for real photo: "${templateData.search_query}"`);
       
       // Mock Image Search (In production, replace with Google/Bing Image API)
-      // For this prototype, we'll use a real high-quality football/stadium image
+      // For this prototype, we'll use a real high-quality football/stadium image from Wikimedia Commons
+      // Unsplash blocks Cloudinary fetches, so we use Wikipedia images for the prototype
       const mockRealPhotoUrls = [
-        'https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?w=800&q=80',
-        'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
-        'https://images.unsplash.com/photo-1508344928928-7165b67de128?w=800&q=80'
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Lamine_Yamal_2023_%28cropped%29.jpg/800px-Lamine_Yamal_2023_%28cropped%29.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Robert_Lewandowski_2022.jpg/800px-Robert_Lewandowski_2022.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Camp_Nou_-_FC_Barcelona.jpg/800px-Camp_Nou_-_FC_Barcelona.jpg'
       ];
       const realPhotoUrl = mockRealPhotoUrls[Math.floor(Math.random() * mockRealPhotoUrls.length)];
 
