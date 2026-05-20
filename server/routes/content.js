@@ -7,7 +7,9 @@ const { generateSocialPost, generateImagePrompt, scoreContentIdea, generateImage
 router.get('/', (req, res) => {
   const { status, platform, limit = 50, offset = 0 } = req.query;
   let query = `
-    SELECT c.*, sa.account_name, sa.platform as account_platform
+    SELECT c.*, 
+           sa.account_name, sa.platform as account_platform,
+           (SELECT post_url FROM publish_logs WHERE content_id = c.id AND status = 'published' ORDER BY timestamp DESC LIMIT 1) as post_url
     FROM content_items c
     LEFT JOIN social_accounts sa ON c.account_id = sa.id
   `;

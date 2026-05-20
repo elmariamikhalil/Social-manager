@@ -160,7 +160,14 @@ export default function PostsLibrary() {
                             </div>
                           </div>
                         </div>
-                        <span className="badge badge-published">Published</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span className="badge badge-published">Published</span>
+                          {item.post_url && (
+                            <a href={item.post_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              View ↗
+                            </a>
+                          )}
+                        </div>
                       </div>
                       
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', whiteSpace: 'pre-wrap' }}>
