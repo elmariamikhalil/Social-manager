@@ -8,46 +8,75 @@ cloudinary.config({
 });
 
 /**
- * Composites a real photo onto a branded template using Cloudinary.
+ * Composites a real photo into a branded graphic using Cloudinary transformations.
+ * Does NOT require any pre-uploaded template assets.
  * @param {string} sourceImageUrl - The URL of the real photo to embed
  * @param {string} headline - The short text to overlay
- * @param {string} platform - The platform name (instagram, facebook) to choose the template
+ * @param {string} platform - The platform name (instagram, facebook)
  * @returns {Promise<string>} The URL of the final composited image
  */
 async function generateTemplateGraphic(sourceImageUrl, headline, platform) {
   if (!process.env.CLOUDINARY_API_KEY) {
     console.warn('⚠️ No Cloudinary API Key. Returning raw photo without template.');
-    // Return the raw factual photo if keys aren't set yet
     return sourceImageUrl;
   }
 
-  try {
-    // In a real app, you would have pre-uploaded templates in your Cloudinary account
-    // e.g., 'fcb_template_ig' (1080x1080)
-    const templateId = platform === 'instagram' ? 'fcb_template_ig' : 'fcb_template_general';
+  // Upload the source photo to Cloudinary
+  const uploadRes = await cloudinary.uploader.upload(sourceImageUrl, {
+    folder: 'social_manager/temp_photos'
+  });
 
-    // Upload the real photo temporarily so we can layer it
-    const uploadRes = await cloudinary.uploader.upload(sourceImageUrl, {
-      folder: 'social_manager/temp_photos'
-    });
+  const isSquare = platform === 'instagram';
+  const w = isSquare ? 1080 : 1200;
+  const h = isSquare ? 1080 : 628;
 
-    // Generate the final composite URL
-    const finalUrl = cloudinary.url(templateId, {
-      transformation: [
-        // Layer the uploaded real photo behind the template cutout
-        { overlay: uploadRes.public_id, width: 800, height: 800, crop: "fill", gravity: "center" },
-        // Apply the headline text on top of everything
-        // Using a bold font, colored white, placed near the bottom
-        { overlay: { font_family: "Montserrat", font_size: 55, font_weight: "bold", text: headline }, 
-          color: "#FFFFFF", gravity: "south", y: 150, width: 900, crop: "fit" }
-      ]
-    });
+  // Sanitize headline text for Cloudinary URL (remove special chars)
+  const safeHeadline = (headline || 'Latest News')
+    .replace(/[^a-zA-Z0-9 !?.,'-]/g, '')
+    .substring(0, 60)
+    .trim();
 
-    return finalUrl;
-  } catch (error) {
-    console.error('Cloudinary templating failed:', error);
-    throw error;
-  }
+  // Build the composited image URL using only transformations on the uploaded photo
+  const finalUrl = cloudinary.url(uploadRes.public_id, {
+    transformation: [
+      // 1. Crop/resize the base photo
+      { width: w, height: h, crop: 'fill', gravity: 'center' },
+      // 2. Dark gradient overlay at the bottom for text readability
+      { overlay: `gradient:progressive`, gravity: 'south', height: Math.round(h * 0.5), width: w, crop: 'fill', opacity: 70, color: 'black' },
+      // 3. Headline text
+      {
+        overlay: {
+          font_family: 'Montserrat',
+          font_size: isSquare ? 52 : 44,
+          font_weight: 'bold',
+          text: safeHeadline,
+          text_align: 'left'
+        },
+        color: 'white',
+        gravity: 'south_west',
+        x: 60,
+        y: isSquare ? 160 : 100,
+        width: w - 120,
+        crop: 'fit'
+      },
+      // 4. Brand bar at the very bottom
+      {
+        overlay: {
+          font_family: 'Montserrat',
+          font_size: 28,
+          font_weight: 'bold',
+          text: 'FC BARCELONA · BARÇA TV'
+        },
+        color: '#A50044',
+        gravity: 'south_west',
+        x: 60,
+        y: 50
+      }
+    ],
+    secure: true
+  });
+
+  return finalUrl;
 }
 
 module.exports = { generateTemplateGraphic };
