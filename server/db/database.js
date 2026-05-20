@@ -148,6 +148,18 @@ function initializeDatabase() {
       ('Daily Growth Snapshot', '0 9 * * *', 'growth_snapshot', '{}');
   `);
 
+  // --- Automatic Migrations ---
+  try {
+    const tableInfo = db.pragma("table_info(content_items)");
+    const hasPlanId = tableInfo.some(col => col.name === 'plan_id');
+    if (!hasPlanId) {
+      db.prepare("ALTER TABLE content_items ADD COLUMN plan_id INTEGER").run();
+      console.log('✅ Migration applied: Added plan_id to content_items');
+    }
+  } catch (err) {
+    console.error('Migration failed:', err.message);
+  }
+
   console.log('✅ Database initialized at', DB_PATH);
 }
 
