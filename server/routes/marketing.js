@@ -62,8 +62,8 @@ router.post('/:id/launch', async (req, res) => {
 
     // Save each idea as a queued content item
     const insertStmt = db.prepare(`
-      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model, scheduled_at)
-      VALUES (?, ?, ?, 'queued', ?, 'plan-launch', ?)
+      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model, scheduled_at, plan_id)
+      VALUES (?, ?, ?, 'queued', ?, 'plan-launch', ?, ?)
     `);
 
     const created = [];
@@ -80,7 +80,8 @@ router.post('/:id/launch', async (req, res) => {
         idea.body,
         idea.platform,
         JSON.stringify(idea.hashtags || []),
-        scheduledAt.toISOString()
+        scheduledAt.toISOString(),
+        plan.id
       );
       created.push(result.lastInsertRowid);
       daysOffset++; // Next post goes on the next day
@@ -101,6 +102,16 @@ router.post('/:id/launch', async (req, res) => {
 router.delete('/:id', (req, res) => {
   db.prepare('DELETE FROM marketing_plans WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+// GET /api/marketing/:id/content — Fetch all generated content for this plan
+router.get('/:id/content', (req, res) => {
+  try {
+    const items = db.prepare('SELECT * FROM content_items WHERE plan_id = ? ORDER BY scheduled_at ASC, created_at ASC').all(req.params.id);
+    res.json({ items });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

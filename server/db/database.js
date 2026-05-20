@@ -60,6 +60,7 @@ function initializeDatabase() {
       published_at TEXT,
       ai_model TEXT,
       engagement_score INTEGER DEFAULT 0,
+      plan_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (account_id) REFERENCES social_accounts(id)

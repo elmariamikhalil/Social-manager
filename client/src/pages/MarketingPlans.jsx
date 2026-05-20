@@ -55,6 +55,63 @@ function getSectionIcon(heading = '') {
   return '📌';
 }
 
+function PlanExecutionDashboard({ planId }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/api/marketing/${planId}/content`)
+      .then(res => res.json())
+      .then(data => {
+        setItems(data.items || []);
+        setLoading(false);
+      });
+  }, [planId]);
+
+  if (loading) return <div className="skeleton" style={{ height: 100 }} />;
+
+  if (items.length === 0) {
+    return (
+      <div className="alert" style={{ background: 'var(--bg-input)' }}>
+        No content items were generated for this plan.
+      </div>
+    );
+  }
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card-header" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="card-title">Generated Posts ({items.length})</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {items.map((item, i) => (
+          <div key={item.id} style={{ 
+            display: 'flex', gap: 12, padding: 16, 
+            borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
+            background: item.status === 'published' ? 'var(--bg-elevated)' : 'transparent'
+          }}>
+            <div style={{ fontSize: '1.2rem', marginTop: 2 }}>{PLATFORM_ICONS[item.platform] || '📱'}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{item.title}</span>
+                <span className={`badge badge-${item.status}`}>{item.status}</span>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {item.body}
+              </div>
+              {item.scheduled_at && (
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 8 }}>
+                  📅 Scheduled: {new Date(item.scheduled_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PlanDetailView({ plan, onLaunch, launching }) {
   const sections = parsePlanSections(plan.strategy);
   const platforms = (() => { try { return JSON.parse(plan.platforms || '[]'); } catch { return []; } })();
@@ -81,8 +138,16 @@ function PlanDetailView({ plan, onLaunch, launching }) {
         </div>
       </div>
 
-      {/* Launch CTA */}
-      {plan.status !== 'launched' && (
+      {/* Execution Dashboard for Launched Plans */}
+      {plan.status === 'launched' ? (
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Execution Tracking</h3>
+            <span className="badge badge-published">Active</span>
+          </div>
+          <PlanExecutionDashboard planId={plan.id} />
+        </div>
+      ) : (
         <div className="plan-launch-cta">
           <div className="plan-launch-cta-text">
             <div className="plan-launch-cta-title">Ready to execute this plan?</div>
@@ -99,12 +164,6 @@ function PlanDetailView({ plan, onLaunch, launching }) {
               <><span>🚀</span> Launch Plan</>
             )}
           </button>
-        </div>
-      )}
-
-      {plan.status === 'launched' && (
-        <div className="alert alert-success" style={{ marginBottom: 20 }}>
-          ✅ This plan has been launched! Check Content Studio or Scheduler to see the generated drafts.
         </div>
       )}
 
