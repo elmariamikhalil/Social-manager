@@ -53,7 +53,8 @@ export default function Analytics() {
   const stats = overview?.stats || {};
 
   const chartTooltipStyle = {
-    contentStyle: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)' },
+    contentStyle: { background: '#ffffff', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' },
+    labelStyle: { fontWeight: 700, color: 'var(--text-primary)' },
   };
 
   return (

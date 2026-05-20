@@ -2,12 +2,64 @@ import { useState, useEffect } from 'react';
 import { API } from '../App';
 
 const PLATFORM_CONFIG = {
-  instagram: { icon: '📸', color: '#e1306c', gradient: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', label: 'Instagram' },
-  facebook:  { icon: '📘', color: '#1877f2', gradient: 'linear-gradient(135deg, #1877f2, #0d5db5)', label: 'Facebook' },
-  twitter:   { icon: '🐦', color: '#1da1f2', gradient: 'linear-gradient(135deg, #1da1f2, #0d8bd9)', label: 'Twitter/X' },
-  linkedin:  { icon: '💼', color: '#0077b5', gradient: 'linear-gradient(135deg, #0077b5, #005e8a)', label: 'LinkedIn' },
-  tiktok:    { icon: '🎵', color: '#010101', gradient: 'linear-gradient(135deg, #010101, #ff0050, #00f2ea)', label: 'TikTok' },
+  instagram: { color: '#e1306c', gradient: 'linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)', label: 'Instagram' },
+  facebook:  { color: '#1877f2', gradient: 'linear-gradient(135deg, #1877f2, #0d5db5)', label: 'Facebook' },
+  twitter:   { color: '#1da1f2', gradient: 'linear-gradient(135deg, #1da1f2, #0d8bd9)', label: 'Twitter/X' },
+  linkedin:  { color: '#0077b5', gradient: 'linear-gradient(135deg, #0077b5, #005e8a)', label: 'LinkedIn' },
+  tiktok:    { color: '#010101', gradient: 'linear-gradient(135deg, #010101, #ff0050, #00f2ea)', label: 'TikTok' },
+  youtube:   { color: '#ff0000', gradient: 'linear-gradient(135deg, #ff0000, #cc0000)', label: 'YouTube' },
 };
+
+function PlatformIcon({ platform, size = 22 }) {
+  const s = size;
+  switch (platform) {
+    case 'instagram': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <defs><linearGradient id={`ig-${s}`} x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#F9CE34"/><stop offset="35%" stopColor="#EE2A7B"/><stop offset="100%" stopColor="#6228D7"/></linearGradient></defs>
+        <rect width="32" height="32" rx="8" fill={`url(#ig-${s})`}/>
+        <rect x="9" y="9" width="14" height="14" rx="4" stroke="white" strokeWidth="2" fill="none"/>
+        <circle cx="16" cy="16" r="3.5" stroke="white" strokeWidth="1.8" fill="none"/>
+        <circle cx="21.2" cy="10.8" r="1.1" fill="white"/>
+      </svg>
+    );
+    case 'facebook': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#1877F2"/>
+        <path d="M18.5 27V18h3l.5-3.5h-3.5V12.5c0-1 .4-1.5 1.5-1.5H20V8s-1-.3-2.5-.3c-2.5 0-4 1.5-4 4.2V14.5H11V18h2.5v9h5z" fill="white"/>
+      </svg>
+    );
+    case 'twitter': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#1DA1F2"/>
+        <path d="M27 10.2a9.4 9.4 0 01-2.6.7 4.6 4.6 0 002-2.5 9.2 9.2 0 01-2.9 1.1 4.6 4.6 0 00-7.8 4.2A13 13 0 015.8 9a4.6 4.6 0 001.4 6.1 4.5 4.5 0 01-2.1-.6v.1a4.6 4.6 0 003.7 4.5 4.6 4.6 0 01-2 .1 4.6 4.6 0 004.3 3.2A9.2 9.2 0 015 23.9a13 13 0 007 2.1c8.4 0 13-7 13-13v-.6a9.2 9.2 0 002-2.2z" fill="white"/>
+      </svg>
+    );
+    case 'linkedin': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#0077B5"/>
+        <path d="M10 13.5H7v10h3v-10zM8.5 12a1.8 1.8 0 100-3.5 1.8 1.8 0 000 3.5zM26 23.5h-3v-5c0-1.4-.6-2.3-1.9-2.3s-2.1.9-2.1 2.3v5h-3v-10h3v1.4c.6-.9 1.7-1.7 3-1.7 2.4 0 4 1.6 4 4.7v5.6z" fill="white"/>
+      </svg>
+    );
+    case 'tiktok': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#010101"/>
+        <path d="M21.5 10.4c-1.2-.8-2-2.1-2.2-3.6H17v13c0 1.5-1.2 2.6-2.7 2.6s-2.7-1.2-2.7-2.6 1.2-2.6 2.7-2.6c.3 0 .5 0 .7.1v-3c-.2 0-.5-.1-.7-.1-3.1 0-5.7 2.6-5.7 5.7s2.6 5.7 5.7 5.7 5.7-2.6 5.7-5.7v-7.3c1.3.9 2.9 1.5 4.5 1.5v-3c-.8 0-2-.4-2.8-1.7z" fill="white"/>
+      </svg>
+    );
+    case 'youtube': return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#FF0000"/>
+        <path d="M27.5 11.2s-.3-2.2-1.3-3.1c-1.2-1.3-2.6-1.3-3.2-1.4C20.5 6.5 16 6.5 16 6.5s-4.5 0-7 .2c-.6.1-2 .1-3.2 1.4C4.8 9 4.5 11.2 4.5 11.2S4.2 13.7 4.5 16c.3 2.3 1.3 3.1 1.3 3.1 1.2 1.3 2.6 1.3 3.2 1.4C11.5 20.7 16 20.7 16 20.7s4.5 0 7-.2c.6-.1 2-.1 3.2-1.4.9-.9 1.3-3.1 1.3-3.1S27.8 13.7 27.5 11.2zm-14.8 6.4V10.4l7 3.6-7 3.6z" fill="white"/>
+      </svg>
+    );
+    default: return (
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#6366f1"/>
+        <text x="16" y="21" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">S</text>
+      </svg>
+    );
+  }
+}
 
 function getInitials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -32,7 +84,7 @@ function AccountProfileCard({ account, onDisconnect, onToggle }) {
           </div>
         )}
         <div className="profile-card-platform-badge" style={{ background: cfg.gradient }}>
-          {cfg.icon}
+          <PlatformIcon platform={account.platform} size={12} />
         </div>
       </div>
 
@@ -215,9 +267,11 @@ export default function SocialAccounts() {
           const connected = accounts.filter(a => a.platform === p);
           return (
             <div key={p} className={`platform-status-chip ${connected.length > 0 ? 'connected' : ''}`}>
-              <span className="platform-status-icon">{cfg.icon}</span>
+              <span className="platform-status-icon">
+                <PlatformIcon platform={p} size={24} />
+              </span>
               <div>
-                <div className="platform-status-name">{cfg.label}</div>
+                <div className="platform-status-name">{cfg?.label || p}</div>
                 <div className="platform-status-count">
                   {connected.length > 0 ? `${connected.length} page${connected.length > 1 ? 's' : ''}` : 'Not connected'}
                 </div>

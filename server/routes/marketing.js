@@ -60,28 +60,36 @@ router.post('/:id/launch', async (req, res) => {
     const ideas = await extractContentIdeasFromPlan(plan, brand);
     console.log(`💡 Extracted ${ideas.length} content ideas from plan`);
 
-    // Save each idea as a draft content item
+    // Save each idea as a queued content item
     const insertStmt = db.prepare(`
-      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model)
-      VALUES (?, ?, ?, 'draft', ?, 'plan-launch')
+      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model, scheduled_at)
+      VALUES (?, ?, ?, 'queued', ?, 'plan-launch', ?)
     `);
 
     const created = [];
+    let daysOffset = 0; // start today
     for (const idea of ideas) {
       if (!idea.body || !idea.platform) continue;
+      
+      const scheduledAt = new Date();
+      scheduledAt.setDate(scheduledAt.getDate() + daysOffset);
+      scheduledAt.setHours(9 + (daysOffset % 4), 0, 0, 0); // Stagger times slightly
+      
       const result = insertStmt.run(
         idea.topic || `${plan.title} — ${idea.platform}`,
         idea.body,
         idea.platform,
         JSON.stringify(idea.hashtags || []),
+        scheduledAt.toISOString()
       );
       created.push(result.lastInsertRowid);
+      daysOffset++; // Next post goes on the next day
     }
 
     // Mark plan as launched
     db.prepare("UPDATE marketing_plans SET status = 'launched' WHERE id = ?").run(plan.id);
 
-    console.log(`✅ Plan launched: created ${created.length} draft content items`);
+    console.log(`✅ Plan launched: created & scheduled ${created.length} content items`);
     res.json({ success: true, created: created.length, item_ids: created });
   } catch (err) {
     console.error('❌ Plan launch error:', err.message);

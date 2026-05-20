@@ -1,40 +1,88 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, PenSquare, Library, BarChart2,
+  Map, Link2, Settings2, Plus, Search, Bell, ChevronDown, Zap
+} from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import ContentStudio from './pages/ContentStudio';
-import Scheduler from './pages/Scheduler';
+import PostsLibrary from './pages/PostsLibrary';
+import Automations from './pages/Automations';
 import Analytics from './pages/Analytics';
 import SocialAccounts from './pages/SocialAccounts';
 import MarketingPlans from './pages/MarketingPlans';
 import Settings from './pages/Settings';
 import './index.css';
 
-// In production, the React app is served by Express on the same domain,
-// so API calls use a relative path. In dev, Vite proxies /api to port 3001.
-const API = '';
-
+// VITE_API_URL overrides the base URL so the dev client can talk to the
+// deployed server directly (e.g. https://agent.kael.es).
+// When the variable is not set, Vite's dev proxy forwards /api → localhost:3001.
+const API = import.meta.env.VITE_API_URL || '';
 export { API };
 
 const NAV = [
-  { path: '/', icon: '⚡', label: 'Dashboard', group: 'main' },
-  { path: '/studio', icon: '✍️', label: 'Content Studio', group: 'main' },
-  { path: '/scheduler', icon: '📅', label: 'Scheduler', group: 'main' },
-  { path: '/analytics', icon: '📊', label: 'Analytics', group: 'main' },
-  { path: '/plans', icon: '🗺️', label: 'Marketing Plans', group: 'strategy' },
-  { path: '/accounts', icon: '🔗', label: 'Social Accounts', group: 'settings' },
-  { path: '/settings', icon: '⚙️', label: 'Settings', group: 'settings' },
+  { path: '/',          icon: LayoutDashboard, label: 'Dashboard',       group: 'main' },
+  { path: '/studio',    icon: PenSquare,        label: 'Content planner', group: 'main' },
+  { path: '/library',   icon: Library,          label: 'Posts library',   group: 'main' },
+  { path: '/analytics', icon: BarChart2,        label: 'Analytics',       group: 'main' },
+  { path: '/plans',     icon: Map,              label: 'Marketing Plans',  group: 'strategy' },
+  { path: '/automations', icon: Zap,            label: 'Automations',      group: 'strategy' },
+  { path: '/accounts',  icon: Link2,            label: 'Social Accounts',  group: 'settings' },
+  { path: '/settings',  icon: Settings2,        label: 'Settings',         group: 'settings' },
 ];
 
-function Sidebar({ apiStatus, queueCount, isOpen, onClose }) {
-  const location = useLocation();
+/* ── Top Bar ──────────────────────────────────────────────────── */
+function Topbar() {
+  return (
+    <header className="topbar">
+      <div className="topbar-search">
+        <span className="topbar-search-icon">
+          <Search size={14} />
+        </span>
+        <input
+          type="text"
+          placeholder="Search…"
+          className="topbar-search-input"
+          readOnly
+        />
+      </div>
 
-  // Close mobile sidebar when a nav link is clicked
+      <div className="topbar-right">
+        <button className="topbar-icon-btn" title="Notifications" aria-label="Notifications">
+          <Bell size={15} />
+        </button>
+
+        <div className="topbar-divider" />
+
+        <div className="topbar-user" role="button" tabIndex={0}>
+          <div className="topbar-avatar">A</div>
+          <div className="topbar-user-info">
+            <div className="topbar-name">Admin</div>
+            <div className="topbar-role">Personal account</div>
+          </div>
+          <span className="topbar-chevron"><ChevronDown size={13} /></span>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+function Sidebar({ apiStatus, queueCount, isOpen, onClose }) {
+  const navigate = useNavigate();
+
+  const handleNewPost = () => {
+    navigate('/studio');
+    if (onClose) onClose();
+  };
+
   const handleLinkClick = () => {
     if (onClose) onClose();
   };
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      {/* Logo */}
       <div className="sidebar-logo">
         <div className="logo-icon">🚀</div>
         <div>
@@ -42,71 +90,87 @@ function Sidebar({ apiStatus, queueCount, isOpen, onClose }) {
           <div className="logo-sub">Marketing Manager</div>
         </div>
         {onClose && (
-          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
-            ✕
-          </button>
+          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">✕</button>
         )}
       </div>
 
+      {/* + New Post */}
+      <div className="sidebar-new-post">
+        <button className="btn-new-post" onClick={handleNewPost} id="sidebar-new-post-btn">
+          <Plus size={14} />
+          New Post
+        </button>
+      </div>
+
+      {/* Navigation */}
       <nav className="sidebar-nav">
         <div className="sidebar-section-label">Workspace</div>
-        {NAV.filter(n => n.group === 'main').map(item => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleLinkClick}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
-            {item.path === '/scheduler' && queueCount > 0 && (
-              <span className="nav-badge">{queueCount}</span>
-            )}
-          </NavLink>
-        ))}
+        {NAV.filter(n => n.group === 'main').map(item => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <span className="nav-icon"><Icon size={16} /></span>
+              <span>{item.label}</span>
+              {item.path === '/scheduler' && queueCount > 0 && (
+                <span className="nav-badge">{queueCount}</span>
+              )}
+            </NavLink>
+          );
+        })}
 
         <div className="sidebar-section-label">Strategy</div>
-        {NAV.filter(n => n.group === 'strategy').map(item => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleLinkClick}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {NAV.filter(n => n.group === 'strategy').map(item => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <span className="nav-icon"><Icon size={16} /></span>
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
 
         <div className="sidebar-section-label">Configuration</div>
-        {NAV.filter(n => n.group === 'settings').map(item => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleLinkClick}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {NAV.filter(n => n.group === 'settings').map(item => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <span className="nav-icon"><Icon size={16} /></span>
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
+      {/* Footer */}
       <div className="sidebar-footer">
         <div className="api-status-pill">
           <span className={`status-dot ${apiStatus?.gemini || apiStatus?.openai ? '' : 'demo'}`} />
-          <span>
-            {apiStatus?.gemini || apiStatus?.openai ? 'AI Connected' : 'Demo Mode'}
-          </span>
+          <span>{apiStatus?.gemini || apiStatus?.openai ? 'AI Connected' : 'Demo Mode'}</span>
         </div>
       </div>
     </aside>
   );
 }
 
+/* ── App Root ─────────────────────────────────────────────────── */
 export default function App() {
-  const [apiStatus, setApiStatus] = useState(null);
+  const [apiStatus, setApiStatus]   = useState(null);
   const [queueCount, setQueueCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -123,7 +187,7 @@ export default function App() {
         .catch(() => {});
     };
     loadQueue();
-    const interval = setInterval(loadQueue, 30000);
+    const interval = setInterval(loadQueue, 30_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -132,39 +196,46 @@ export default function App() {
       <div className="app-layout">
         {/* Mobile top bar */}
         <header className="mobile-header">
-          <button className="hamburger-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+          <button
+            className="hamburger-btn"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+            id="mobile-menu-btn"
+          >
             ☰
           </button>
           <div className="mobile-logo">
-            <span style={{ marginRight: 6 }}>🚀</span>SocialAI
+            <span>🚀</span> SocialAI
           </div>
         </header>
 
-        {/* Sidebar overlay backdrop for mobile */}
+        {/* Sidebar overlay backdrop (mobile) */}
         {mobileOpen && (
           <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
         )}
 
-        <Sidebar 
-          apiStatus={apiStatus} 
-          queueCount={queueCount} 
-          isOpen={mobileOpen} 
-          onClose={() => setMobileOpen(false)} 
+        <Sidebar
+          apiStatus={apiStatus}
+          queueCount={queueCount}
+          isOpen={mobileOpen}
+          onClose={() => setMobileOpen(false)}
         />
-        
-        <main className="main-content">
+
+        <div className="main-content">
+          <Topbar />
           <div className="page-container">
             <Routes>
-              <Route path="/" element={<Dashboard apiStatus={apiStatus} />} />
-              <Route path="/studio" element={<ContentStudio />} />
-              <Route path="/scheduler" element={<Scheduler />} />
+              <Route path="/"          element={<Dashboard apiStatus={apiStatus} />} />
+              <Route path="/studio"    element={<ContentStudio />} />
+              <Route path="/library"   element={<PostsLibrary />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/plans" element={<MarketingPlans />} />
-              <Route path="/accounts" element={<SocialAccounts />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/plans"     element={<MarketingPlans />} />
+              <Route path="/automations" element={<Automations />} />
+              <Route path="/accounts"  element={<SocialAccounts />} />
+              <Route path="/settings"  element={<Settings />} />
             </Routes>
           </div>
-        </main>
+        </div>
       </div>
     </BrowserRouter>
   );

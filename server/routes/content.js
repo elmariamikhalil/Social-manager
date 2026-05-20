@@ -127,8 +127,14 @@ router.put('/:id', (req, res) => {
 
 // DELETE /api/content/:id
 router.delete('/:id', (req, res) => {
-  db.prepare('DELETE FROM content_items WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
+  try {
+    // Delete associated logs first to avoid foreign key constraints
+    db.prepare('DELETE FROM publish_logs WHERE content_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM content_items WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/content/:id/publish
@@ -144,10 +150,18 @@ router.post('/:id/publish', async (req, res) => {
 
 // POST /api/content/:id/approve - Move draft to queued
 router.post('/:id/approve', (req, res) => {
-  const { scheduled_at } = req.body;
+  let { scheduled_at } = req.body;
+  
+  if (!scheduled_at) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    scheduled_at = tomorrow.toISOString();
+  }
+
   db.prepare(`
     UPDATE content_items SET status = 'queued', scheduled_at = ?, updated_at = datetime('now') WHERE id = ?
-  `).run(scheduled_at || null, req.params.id);
+  `).run(scheduled_at, req.params.id);
   const item = db.prepare('SELECT * FROM content_items WHERE id = ?').get(req.params.id);
   res.json(item);
 });
