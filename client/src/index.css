@@ -900,14 +900,27 @@ tbody tr:hover { background: var(--bg-input); }
 .btn-launch:hover:not(:disabled) { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,58,237,0.35); }
 .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.plan-sections { padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto; }
+.plan-sections { padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
 
 .plan-section { border-radius: var(--r-md); overflow: hidden; }
 .plan-section--phase { background: var(--bg-input); border: 1px solid var(--border); }
 .plan-section--subphase { background: transparent; border: 1px solid var(--border); margin-left: 12px; }
 
-.plan-section-header { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-bottom: 1px solid var(--border); background: white; }
+.plan-section-header { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
 .plan-section-icon { font-size: 0.95rem; flex-shrink: 0; }
+.plan-section-heading { font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+
+.plan-section-items { 
+  margin: 0; 
+  padding: 12px 16px 12px 32px; 
+  list-style-type: disc;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  background: var(--bg-card);
+}
+.plan-section-item { margin-bottom: 6px; }
+.plan-section-item:last-child { margin-bottom: 0; }
 .plan-section-heading { font-size: 0.84rem; font-weight: 700; color: var(--text-primary); }
 
 .plan-section-items { list-style: none; padding: 9px 13px 11px; display: flex; flex-direction: column; gap: 7px; }

@@ -177,9 +177,13 @@ function PlanDetailView({ plan, onLaunch, launching }) {
             </div>
             {section.items.length > 0 && (
               <ul className="plan-section-items">
-                {section.items.map((item, i) => (
-                  <li key={i} className="plan-section-item">{item}</li>
-                ))}
+                {section.items.map((item, i) => {
+                  // Basic markdown formatting for bold text
+                  const formatted = item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/^>\s*/, '');
+                  return (
+                    <li key={i} className="plan-section-item" dangerouslySetInnerHTML={{ __html: formatted }} />
+                  );
+                })}
               </ul>
             )}
           </div>
