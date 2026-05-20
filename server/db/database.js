@@ -145,6 +145,7 @@ function initializeDatabase() {
     VALUES 
       ('Refresh Trends', '0 */2 * * *', 'refresh_trends', '{"subreddits": ["technology", "marketing", "socialmedia"]}'),
       ('Process Publish Queue', '*/15 * * * *', 'process_queue', '{}'),
+      ('Generate Images', '*/2 * * * *', 'generate_images', '{}'),
       ('Daily Growth Snapshot', '0 9 * * *', 'growth_snapshot', '{}');
   `);
 

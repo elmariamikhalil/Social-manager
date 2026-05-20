@@ -289,7 +289,8 @@ Return ONLY a JSON array (no markdown, no explanation) with exactly 10 objects l
     "platform": "instagram",
     "topic": "Short description of post topic",
     "body": "The full ready-to-post caption text with emojis and hashtags as appropriate",
-    "hashtags": ["#hashtag1", "#hashtag2"]
+    "hashtags": ["#hashtag1", "#hashtag2"],
+    "image_prompt": "A highly detailed DALL-E/Imagen visual prompt for a stunning aesthetic background matching the topic"
   }
 ]
 

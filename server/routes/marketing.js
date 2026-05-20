@@ -62,8 +62,8 @@ router.post('/:id/launch', async (req, res) => {
 
     // Save each idea as a queued content item
     const insertStmt = db.prepare(`
-      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model, scheduled_at, plan_id)
-      VALUES (?, ?, ?, 'queued', ?, 'plan-launch', ?, ?)
+      INSERT INTO content_items (title, body, platform, status, hashtags, ai_model, scheduled_at, plan_id, image_prompt)
+      VALUES (?, ?, ?, 'queued', ?, 'plan-launch', ?, ?, ?)
     `);
 
     const created = [];
@@ -81,7 +81,8 @@ router.post('/:id/launch', async (req, res) => {
         idea.platform,
         JSON.stringify(idea.hashtags || []),
         scheduledAt.toISOString(),
-        plan.id
+        plan.id,
+        idea.image_prompt || null
       );
       created.push(result.lastInsertRowid);
       daysOffset++; // Next post goes on the next day

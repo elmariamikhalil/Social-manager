@@ -78,10 +78,39 @@ async function runGrowthSnapshot() {
   return { accounts: accounts.length };
 }
 
+async function runGenerateImages() {
+  console.log('🎨 Running: Generate Images');
+  const { generateImage } = require('./aiService');
+  
+  const pendingItems = db.prepare(`
+    SELECT id, image_prompt FROM content_items 
+    WHERE image_prompt IS NOT NULL AND image_url IS NULL 
+    AND status IN ('draft', 'queued')
+    LIMIT 3
+  `).all();
+
+  let count = 0;
+  for (const item of pendingItems) {
+    try {
+      const url = await generateImage(item.image_prompt);
+      if (url) {
+        db.prepare('UPDATE content_items SET image_url = ?, updated_at = datetime("now") WHERE id = ?').run(url, item.id);
+        count++;
+      }
+    } catch (err) {
+      console.error(`Failed to generate image for item ${item.id}:`, err.message);
+    }
+  }
+  
+  if (count > 0) console.log(`✅ Generated ${count} images`);
+  return { generated: count };
+}
+
 const JOB_HANDLERS = {
   refresh_trends: runRefreshTrends,
   process_queue: runProcessQueue,
   growth_snapshot: runGrowthSnapshot,
+  generate_images: runGenerateImages,
 };
 
 function startAllJobs() {

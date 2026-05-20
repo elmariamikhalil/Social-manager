@@ -99,6 +99,19 @@ function PlanExecutionDashboard({ planId }) {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {item.body}
               </div>
+              
+              {/* Image Preview Block */}
+              {item.image_url ? (
+                <div style={{ marginTop: 12, borderRadius: 'var(--r-md)', overflow: 'hidden', border: '1px solid var(--border)', maxWidth: 200 }}>
+                  <img src={`${API}${item.image_url}`} alt="Generated visual" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
+              ) : item.image_prompt ? (
+                <div style={{ marginTop: 12, padding: '12px', background: 'var(--bg-input)', borderRadius: 'var(--r-md)', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> 
+                  Generating image with AI...
+                </div>
+              ) : null}
+
               {item.scheduled_at && (
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 8 }}>
                   📅 Scheduled: {new Date(item.scheduled_at).toLocaleString()}
