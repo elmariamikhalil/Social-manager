@@ -139,6 +139,32 @@ router.delete('/:id', (req, res) => {
   }
 });
 
+// GET /api/content/:id/insights - Fetch live stats from Meta
+router.get('/:id/insights', async (req, res) => {
+  try {
+    const log = db.prepare("SELECT post_id, account_id, platform FROM publish_logs WHERE content_id = ? AND status = 'published' ORDER BY timestamp DESC LIMIT 1").get(req.params.id);
+    if (!log || !log.post_id || log.post_id.startsWith('demo_')) {
+      return res.json({ likes: 0, comments: 0, shares: 0, reach: 0, mock: true });
+    }
+
+    const account = db.prepare('SELECT * FROM social_accounts WHERE id = ?').get(log.account_id);
+    if (!account) return res.json({ likes: 0, comments: 0, shares: 0, reach: 0 });
+
+    const { getFacebookPostInsights, getInstagramPostInsights } = require('../services/metaService');
+    
+    let stats = { likes: 0, comments: 0, shares: 0, reach: 0 };
+    if (log.platform === 'facebook') {
+      stats = await getFacebookPostInsights(log.post_id, account.access_token);
+    } else if (log.platform === 'instagram') {
+      stats = await getInstagramPostInsights(log.post_id, account.access_token);
+    }
+    
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/content/:id/publish
 router.post('/:id/publish', async (req, res) => {
   const { publishContent } = require('../services/publishService');

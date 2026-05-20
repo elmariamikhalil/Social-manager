@@ -56,6 +56,50 @@ function getMockStats(id) {
   return { likes, comments, shares, reach };
 }
 
+function PostAnalytics({ itemId }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API}/api/content/${itemId}/insights`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.mock) {
+          setStats(getMockStats(itemId));
+        } else {
+          setStats(data);
+        }
+      })
+      .catch(() => setStats(getMockStats(itemId)));
+  }, [itemId]);
+
+  if (!stats) return <div style={{ padding: '12px 16px', background: 'var(--bg-input)', color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center' }}>Loading insights...</div>;
+
+  return (
+    <div style={{ padding: '12px 16px', background: 'var(--bg-input)' }}>
+      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Engagement</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{stats.likes}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Likes</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.comments}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Comments</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.shares}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Shares</div>
+        </div>
+        <div style={{ width: 1, height: 24, background: 'var(--border)' }}></div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.reach}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Reach</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PostsLibrary() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +190,6 @@ export default function PostsLibrary() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
               {publishedItems.map(item => {
-                const stats = getMockStats(item.id);
                 return (
                   <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
                     <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
@@ -175,29 +218,7 @@ export default function PostsLibrary() {
                       </div>
                     </div>
                     
-                    {/* Analytics Section */}
-                    <div style={{ padding: '12px 16px', background: 'var(--bg-input)' }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Engagement</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{stats.likes}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Likes</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.comments}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Comments</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.shares}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Shares</div>
-                        </div>
-                        <div style={{ width: 1, height: 24, background: 'var(--border)' }}></div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.reach}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Reach</div>
-                        </div>
-                      </div>
-                    </div>
+                    <PostAnalytics itemId={item.id} />
                   </div>
                 );
               })}
