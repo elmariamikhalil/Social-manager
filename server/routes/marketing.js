@@ -75,6 +75,11 @@ router.post('/:id/launch', async (req, res) => {
       scheduledAt.setDate(scheduledAt.getDate() + daysOffset);
       scheduledAt.setHours(9 + (daysOffset % 4), 0, 0, 0); // Stagger times slightly
       
+      const templateData = JSON.stringify({
+        search_query: idea.search_query || idea.topic,
+        headline: idea.headline || "BREAKING NEWS"
+      });
+
       const result = insertStmt.run(
         idea.topic || `${plan.title} — ${idea.platform}`,
         idea.body,
@@ -82,7 +87,7 @@ router.post('/:id/launch', async (req, res) => {
         JSON.stringify(idea.hashtags || []),
         scheduledAt.toISOString(),
         plan.id,
-        idea.image_prompt || null
+        templateData
       );
       created.push(result.lastInsertRowid);
       daysOffset++; // Next post goes on the next day

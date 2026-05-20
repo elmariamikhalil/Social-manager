@@ -79,11 +79,11 @@ async function runGrowthSnapshot() {
 }
 
 async function runGenerateImages() {
-  console.log('🎨 Running: Generate Images');
-  const { generateImage } = require('./aiService');
+  console.log('🎨 Running: Template Compositing');
+  const { generateTemplateGraphic } = require('./cloudinaryService');
   
   const pendingItems = db.prepare(`
-    SELECT id, image_prompt FROM content_items 
+    SELECT id, image_prompt, platform FROM content_items 
     WHERE image_prompt IS NOT NULL AND image_url IS NULL 
     AND status IN ('draft', 'queued')
     LIMIT 3
@@ -92,17 +92,39 @@ async function runGenerateImages() {
   let count = 0;
   for (const item of pendingItems) {
     try {
-      const url = await generateImage(item.image_prompt);
-      if (url) {
-        db.prepare(`UPDATE content_items SET image_url = ?, updated_at = datetime('now') WHERE id = ?`).run(url, item.id);
+      // Parse the JSON we saved during plan launch
+      let templateData;
+      try {
+        templateData = JSON.parse(item.image_prompt);
+      } catch (e) {
+        // Fallback if it's still using the old raw prompt string
+        templateData = { search_query: 'FC Barcelona', headline: 'BREAKING' };
+      }
+
+      console.log(`🔍 Searching for real photo: "${templateData.search_query}"`);
+      
+      // Mock Image Search (In production, replace with Google/Bing Image API)
+      // For this prototype, we'll use a real high-quality football/stadium image
+      const mockRealPhotoUrls = [
+        'https://images.unsplash.com/photo-1518605368461-1e1e38ce8058?w=800&q=80',
+        'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
+        'https://images.unsplash.com/photo-1508344928928-7165b67de128?w=800&q=80'
+      ];
+      const realPhotoUrl = mockRealPhotoUrls[Math.floor(Math.random() * mockRealPhotoUrls.length)];
+
+      console.log(`🖼️ Compositing template with Cloudinary for platform: ${item.platform}`);
+      const finalImageUrl = await generateTemplateGraphic(realPhotoUrl, templateData.headline, item.platform);
+
+      if (finalImageUrl) {
+        db.prepare(`UPDATE content_items SET image_url = ?, updated_at = datetime('now') WHERE id = ?`).run(finalImageUrl, item.id);
         count++;
       }
     } catch (err) {
-      console.error(`Failed to generate image for item ${item.id}:`, err.message);
+      console.error(`Failed to composite image for item ${item.id}:`, err.message);
     }
   }
   
-  if (count > 0) console.log(`✅ Generated ${count} images`);
+  if (count > 0) console.log(`✅ Composited ${count} graphics`);
   return { generated: count };
 }
 

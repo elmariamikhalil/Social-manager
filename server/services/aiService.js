@@ -290,7 +290,8 @@ Return ONLY a JSON array (no markdown, no explanation) with exactly 10 objects l
     "topic": "Short description of post topic",
     "body": "The full ready-to-post caption text with emojis and hashtags as appropriate",
     "hashtags": ["#hashtag1", "#hashtag2"],
-    "image_prompt": "A highly detailed DALL-E/Imagen visual prompt for a stunning aesthetic background matching the topic"
+    "search_query": "A highly specific, factual Google Image search query to find a real photo for this post (e.g. 'Hansi Flick FC Barcelona press conference 2026')",
+    "headline": "A short, punchy 3-5 word headline to overlay on the graphic template"
   }
 ]
 
