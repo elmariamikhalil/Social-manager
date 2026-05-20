@@ -107,9 +107,9 @@ async function runGenerateImages() {
       // For this prototype, we'll use a real high-quality football/stadium image from Wikimedia Commons
       // Unsplash blocks Cloudinary fetches, so we use Wikipedia images for the prototype
       const mockRealPhotoUrls = [
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Messi_vs_Nigeria_2018.jpg/800px-Messi_vs_Nigeria_2018.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Gerard_Pique_2015.jpg/800px-Gerard_Pique_2015.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/FC_Barcelona_-_Camp_Nou.jpg/800px-FC_Barcelona_-_Camp_Nou.jpg'
+        'https://images.pexels.com/photos/114296/pexels-photo-114296.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg?auto=compress&cs=tinysrgb&w=800',
+        'https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=800'
       ];
       const realPhotoUrl = mockRealPhotoUrls[Math.floor(Math.random() * mockRealPhotoUrls.length)];
 
